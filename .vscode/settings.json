@@ -1,0 +1,5 @@
+{
+    "java.project.referencedLibraries": [
+        "libs/jnativehook-2.2.2.jar"
+    ]
+}
