@@ -1,8 +1,9 @@
-import com.sun.jna.*;
+import com.sun.jna.platform.win32.Kernel32;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.*;
 import com.sun.jna.platform.win32.WinUser;
-
+import com.sun.jna.platform.win32.WinUser.HHOOK;
+import com.sun.jna.platform.win32.WinUser.MSG;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -20,25 +21,94 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 //MAKE UI LOOK VERY GOOD
 //save everything into a text file so it will all reload once you close
 //how to ignore the keypress of the user that he wants to remap??
-public class Main implements NativeKeyListener{
-    
+public class Main implements NativeKeyListener {
+    static final int IS_INJECTED = 16;
+    static Robot robot;
     static HashMap<Integer, Integer> codeToCode = new HashMap<>();
 
-    //maybe make it return string
-    public void nativeKeyPressed(NativeKeyEvent e){
-        if (codeToCode.containsKey(e.getKeyCode())){
-            
+    public void simulateKeyPress(int code, boolean pressed) throws AWTException{
+        if (pressed){
+            robot = new Robot();
+            robot.keyPress(code);
+        }else{
+            robot.keyRelease(code);
         }
-        //use esc key to stop program
-        if (e.getKeyCode() == NativeKeyEvent.VC_ESCAPE){
+    }      
+    public void nativeKeyPressed(NativeKeyEvent e) {
+    // have to not block injected keys but block the physical keypress
+        WinUser.LowLevelKeyboardProc keyboardHook = new WinUser.LowLevelKeyboardProc() {
+
+            public LRESULT callback(int nCode, WPARAM wParam, WinUser.KBDLLHOOKSTRUCT info) {
+                // If nCode is >= 0, we can process the event
+                // need to check if the key is simulated by robot class or not
+                if (nCode >= 0) {
+
+                    boolean isInjected = (info.flags & IS_INJECTED) != 0;                                                                                                    
+                    if (isInjected) {
+                        return User32.INSTANCE.CallNextHookEx(null, nCode, wParam,
+                                new LPARAM(com.sun.jna.Pointer.nativeValue(info.getPointer())));
+                    }
+                    if (codeToCode.containsKey(info.vkCode)){
+                        //fix double clicking      
+                        int event = wParam.intValue(); 
+                        if (event == WinUser.WM_KEYDOWN || event == WinUser.WM_SYSKEYDOWN) {
+                            try {
+                                simulateKeyPress(codeToCode.get(info.vkCode), true);
+                            } catch (AWTException e) {
+                                e.printStackTrace();
+                            }
+                        }  else if (event == WinUser.WM_KEYUP || event == WinUser.WM_SYSKEYUP) {
+                            try{
+                                simulateKeyPress(codeToCode.get(info.vkCode), false);
+                            }catch(AWTException e){
+                                e.printStackTrace();
+                            }   
+                        }
+                        //return here
+                        return new LRESULT(1);
+                    }
+                }
+                                                                                                                                              
+                return User32.INSTANCE.CallNextHookEx(null, nCode, wParam,
+                        new LPARAM(com.sun.jna.Pointer.nativeValue(info.getPointer())));
+            }
+        };
+                                                   
+        HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
+        HHOOK hhk = User32.INSTANCE.SetWindowsHookEx(
+                WinUser.WH_KEYBOARD_LL,
+                keyboardHook,
+                hMod,
+                0 // 0 means it hooks all threads (global)
+        );
+
+        if (hhk == null) {
+            System.err.println("Failed to install hook.");
+            return;
+        }
+
+        MSG msg = new MSG();
+        int result;
+        while ((result = User32.INSTANCE.GetMessage(msg, null, 0, 0)) != 0) {
+            if (result == -1) {
+                break;
+            }
+            User32.INSTANCE.TranslateMessage(msg);
+            User32.INSTANCE.DispatchMessage(msg);
+        }
+
+        User32.INSTANCE.UnhookWindowsHookEx(hhk);
+
+        // use esc key to stop program
+        if (e.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
             try {
                 GlobalScreen.unregisterNativeHook();
-            } catch (NativeHookException ex){
+            } catch (NativeHookException ex) {
                 ex.printStackTrace();
             }
         }
-    }
-
+        }
+    
     public void nativeKeyReleased(NativeKeyEvent e) {
 		System.out.println("Key Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
 	}
@@ -57,8 +127,8 @@ public class Main implements NativeKeyListener{
     public static void main(String[] args){
         //also need to allow users to put their unique keycodes
         //or allow users to see their keycodes
-        //don't forget to clear keymap object after
-        
+        //don't forget to clear keymap object after 
+
         KeyMap keymap = new KeyMap();
         HashMap<String, Integer> stringToKeyCode = new HashMap<>();
         stringToKeyCode.put("space", KeyEvent.VK_SPACE);
@@ -67,9 +137,8 @@ public class Main implements NativeKeyListener{
         stringToKeyCode.put("shift",KeyEvent.VK_SHIFT);
         stringToKeyCode.put("backspace",KeyEvent.VK_BACK_SPACE);
         stringToKeyCode.put("ctrl", KeyEvent.VK_CONTROL);
-        //stringToKeyCode.put("fn")
-
-
+        //stringToKeyCode.put("fn")     
+         
         JFrame frame = new JFrame("Keyremapper");
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -79,7 +148,7 @@ public class Main implements NativeKeyListener{
 
         JButton chooseKeyToRemap = new JButton("submit");
         JLabel chooseRemap = new JLabel("choose the key it'll remap to");
-        JTextField enterKeyToRemap = new JTextField(20);
+        JTextField enterKeyToRemap = new JTextField(20);             
 
         chooseKey.setVisible(false);
         chooseKeyToMap.setVisible(false);
@@ -109,7 +178,7 @@ public class Main implements NativeKeyListener{
                     chooseRemap.setVisible(true);
                     enterKeyToRemap.setVisible(true);
                     chooseKeyToRemap.setVisible(true);
-                }else{
+                } else{
                     enterKeyToMap.setText("Error in registering the key you want. ensure it is spelled correctly with spaces if nessesary");
                 }
             }
@@ -128,7 +197,7 @@ public class Main implements NativeKeyListener{
                     enterKeyToMap.setText("Error in registering the key you want. ensure it is spelled correctly with spaces if nessesary");
                 }
             }
-        });
+        });  
         frame.add(chooseKey);
         frame.add(chooseKeyToMap);
         frame.add(enterKeyToMap);
@@ -146,14 +215,6 @@ public class Main implements NativeKeyListener{
         } catch(InterruptedException e){
             System.err.println("sleep error");
         }
-        try{
-            Robot bot = new Robot();
-            
-        } catch(AWTException ex){
-            System.err.println("error in initializing robot");
-            ex.printStackTrace();
-        }
-        
         try{
             GlobalScreen.registerNativeHook();
         } catch(NativeHookException ex){
