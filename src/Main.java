@@ -13,12 +13,14 @@ import java.util.Map;
 
 import java.util.ArrayList;
 
+import java.io.*; //should this be only the imports you need?
+
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.NativeHookException;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent;
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener;
 
-//MAKE UI LOOK VERY GOOD
+//MAKE UI LOOK VERY GOOD OR ELSE YOU FAIL
 //save everything into a text file so it will all reload once you close
 //how to ignore the keypress of the user that he wants to remap??
 public class Main implements NativeKeyListener {
@@ -26,6 +28,7 @@ public class Main implements NativeKeyListener {
     static Robot robot;
     static HashMap<Integer, Integer> codeToCode = new HashMap<>();
 
+    
     public void simulateKeyPress(int code, boolean pressed) throws AWTException{
         if (pressed){
             robot = new Robot();
@@ -129,6 +132,23 @@ public class Main implements NativeKeyListener {
         //or allow users to see their keycodes
         //don't forget to clear keymap object after 
 
+        //load everything into the hashmap:
+        try (BufferedReader reader = new BufferedReader(new FileReader("src/mappings.txt"))){
+            String line;
+            while ((line = reader.readLine()) != null){
+                if (line.trim().isEmpty()){
+                    continue;
+                }
+                String[] codes = line.split(",");
+                int initKeyCode = Integer.parseInt(codes[0]);
+                int finalKeyCode = Integer.parseInt(codes[1]);
+
+                codeToCode.put(initKeyCode, finalKeyCode);
+            }
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+        
         KeyMap keymap = new KeyMap();
         HashMap<String, Integer> stringToKeyCode = new HashMap<>();
         stringToKeyCode.put("space", KeyEvent.VK_SPACE);
@@ -148,7 +168,9 @@ public class Main implements NativeKeyListener {
 
         JButton chooseKeyToRemap = new JButton("submit");
         JLabel chooseRemap = new JLabel("choose the key it'll remap to");
-        JTextField enterKeyToRemap = new JTextField(20);             
+        JTextField enterKeyToRemap = new JTextField(20);     
+        
+        JButton removeAllMappings = new JButton("remove all mappings");
 
         chooseKey.setVisible(false);
         chooseKeyToMap.setVisible(false);
@@ -167,6 +189,16 @@ public class Main implements NativeKeyListener {
                 enterKeyToMap.setVisible(true);
             }
         });
+
+        removeAllMappings.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e){
+                codeToCode.clear();
+                try(BufferedWriter writer = new BufferedWriter(new FileWriter("src/mappings.txt"))){
+                    writer.write("");
+                    writer.close();      
+                }catch(IOException ex){}
+            }
+        });
         //allow user to get the key they want to map
         chooseKeyToMap.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e){
@@ -176,7 +208,7 @@ public class Main implements NativeKeyListener {
                     int code = stringToKeyCode.get(text);
                     keymap.setInitKeyCode(code);
                     chooseRemap.setVisible(true);
-                    enterKeyToRemap.setVisible(true);
+                    enterKeyToRemap.setVisible(true); //now allow the user to choose a key to remap it to
                     chooseKeyToRemap.setVisible(true);
                 } else{
                     enterKeyToMap.setText("Error in registering the key you want. ensure it is spelled correctly with spaces if nessesary");
@@ -192,12 +224,28 @@ public class Main implements NativeKeyListener {
                     int code = stringToKeyCode.get(text);
                     keymap.setFinalKeyCode(code);
                     codeToCode.put(keymap.getInitKeyCode(), keymap.getFinalKeyCode());
+                    try(BufferedWriter writer = new BufferedWriter(new FileWriter("src/mappings.txt", true))){
+                        writer.write(keymap.getInitKeyCode() + "," + keymap.getFinalKeyCode());
+                        writer.newLine();
+                        writer.close();
+                    }catch(IOException ex){
+                        ex.printStackTrace();
+                    }
+
+                    chooseKey.setVisible(false);
+                    chooseKeyToMap.setVisible(false);
+                    enterKeyToMap.setVisible(false);
+                    // find a way to make this shit more efficient this is repeated too much. maybe put all into a box and make box invis/visible
+                    chooseKeyToRemap.setVisible(false);
+                    chooseRemap.setVisible(false);
+                    enterKeyToRemap.setVisible(false);
                     keymap.clear();
                 }else{
                     enterKeyToMap.setText("Error in registering the key you want. ensure it is spelled correctly with spaces if nessesary");
                 }
             }
         });  
+        
         frame.add(chooseKey);
         frame.add(chooseKeyToMap);
         frame.add(enterKeyToMap);
@@ -205,6 +253,8 @@ public class Main implements NativeKeyListener {
         frame.add(chooseRemap);
         frame.add(chooseKeyToRemap);
         frame.add(enterKeyToRemap);
+
+        frame.add(removeAllMappings);
         
         frame.setLayout(new FlowLayout());
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -223,5 +273,6 @@ public class Main implements NativeKeyListener {
         }
         GlobalScreen.addNativeKeyListener(new Main());
     }
+    
     
 }
