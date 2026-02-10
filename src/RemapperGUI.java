@@ -5,7 +5,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.HashMap;
 
-public class RemapperGUI extends JFrame implements ActionListener{
+public class RemapperGUI extends JFrame implements ActionListener {
     private DefaultTableModel model;
     private JTable table;
     private HashMap<String, Integer> stringToKeyCode;
@@ -42,141 +42,113 @@ public class RemapperGUI extends JFrame implements ActionListener{
     }
 
     private void initUI() {
-    setTitle("Keyremapper");
-    setExtendedState(JFrame.MAXIMIZED_BOTH);
-    setUndecorated(true);
-    
-    // Switch to BorderLayout for better organization
-    setLayout(new BorderLayout());
-
-    // --- 1. TOP PANEL (Existing Text Controls + New Layout Selector) ---
-    JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-    topPanel.setBackground(new Color(240, 240, 240));
-
-    // Existing buttons
-    JButton createMapping = new JButton("create keymap");
-    JButton removeMapping = new JButton("remove selected mapping");
-    JButton removeAllMappings = new JButton("remove all mappings");
-
-    createMapping.setFocusable(false);
-    removeMapping.setFocusable(false);
-    removeAllMappings.setFocusable(false);
-
-    String[] layoutOptions = {"100%", "75%", "65%"};
-    JComboBox<String> layoutSelector = new JComboBox<>(layoutOptions);
-    layoutSelector.addActionListener(e -> {
-        String selected = (String) layoutSelector.getSelectedItem();
-        if ("100%".equals(selected)) virtualKeyboard.render100Percent();
-        else if ("75%".equals(selected)) virtualKeyboard.render75Percent();
-        else if ("65%".equals(selected)) virtualKeyboard.render65Percent();
-    });
-
-    confirmVisualBtn.setEnabled(false); 
-
-    topPanel.add(createMapping);
-    topPanel.add(removeMapping);
-    topPanel.add(removeAllMappings);
-    topPanel.add(new JLabel(" | Layout: "));
-    topPanel.add(layoutSelector);
-    topPanel.add(confirmVisualBtn);
-
-    // --- 2. INPUT PANEL (Your existing text fields) ---
-    JPanel inputPanel = new JPanel(new FlowLayout());
-    inputPanel.add(chooseKey); inputPanel.add(enterKeyToMap);
-    inputPanel.add(chooseRemap); inputPanel.add(enterKeyToRemap);
-    inputPanel.add(chooseKeyToRemap);
-    
-    // Combine Top and Input panels into a North container
-    JPanel northContainer = new JPanel(new GridLayout(2, 1));
-    northContainer.add(topPanel);
-    northContainer.add(inputPanel);
-
-    // --- 3. CENTER: Virtual Keyboard ---
-    // Pass 'this' as the ActionListener to handle key clicks
-    virtualKeyboard = new VirtualKeyboard(this); 
-    JScrollPane kbScroll = new JScrollPane(virtualKeyboard);
-
-    // --- 4. EAST: The Table ---
-    model = new DefaultTableModel(new String[]{"Key", "Mapped To"}, 0) {
-        @Override public boolean isCellEditable(int row, int col) { 
-            return false; 
-        }
-    };
-    table = new JTable(model);
-    table.setFocusable(false);
-    table.setRowSelectionAllowed(true);
-    JScrollPane tableScroll = new JScrollPane(table);
-    tableScroll.setPreferredSize(new Dimension(300, 0));
-
-    // --- ACTION LISTENERS (Text Logic - Your original code) ---
-
-    createMapping.addActionListener(e -> {
-        toggleInputFields(true);
-        visualStep = 1; // Start visual selection mode as well
-        JOptionPane.showMessageDialog(this, "Visual Mode: Click the physical key you want to change (turns RED).");
-    });
-
-    chooseKeyToRemap.addActionListener(e -> {
-        String keyStr = enterKeyToMap.getText();
-        String remapStr = enterKeyToRemap.getText();
-
-        if (stringToKeyCode.containsKey(keyStr) && stringToKeyCode.containsKey(remapStr) 
-            && !Main.codeToCode.containsKey(stringToKeyCode.get(keyStr))) {
-            
-            int init = stringToKeyCode.get(keyStr);
-            int fin = stringToKeyCode.get(remapStr);
-            executeMapping(init, fin);
-            
-            enterKeyToMap.setText("");
-            enterKeyToRemap.setText("");
-            toggleInputFields(false);
-        } else {
-            JOptionPane.showMessageDialog(this, "Key(s) is invalid or already mapped.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    });
-
-    confirmVisualBtn.addActionListener(e -> {
-        if (sourceKeyBtn != null && destKeyBtn != null) {
-            executeMapping(sourceKeyBtn.getKeyCode(), destKeyBtn.getKeyCode());
-            resetVisualSelection();
-        }
-    });
-
-    removeMapping.addActionListener(e -> {
-    int row = table.getSelectedRow();
-    if (row != -1) {
-        // 1. Get the name exactly as it appears in the table (e.g., "Enter")
-        String keyNameInTable = (String) table.getValueAt(row, 0);
+        setTitle("Keyremapper");
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setUndecorated(true);
         
-        // 2. Remove from the HashMap by comparing the "Friendly Name"
-        Main.codeToCode.entrySet().removeIf(entry -> 
-            VirtualKeyboard.getName(entry.getKey()).equals(keyNameInTable)
-        );
+        setLayout(new BorderLayout());
 
-        // 3. Remove from UI and update the file
-        model.removeRow(row);
-        Main.updateTextFile();
+        // --- 1. TOP PANEL ---
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBackground(new Color(240, 240, 240));
+
+        JButton createMapping = new JButton("create keymap");
+        JButton removeMapping = new JButton("remove selected mapping");
+        JButton removeAllMappings = new JButton("remove all mappings");
+
+        createMapping.setFocusable(false);
+        removeMapping.setFocusable(false);
+        removeAllMappings.setFocusable(false);
+
+        String[] layoutOptions = {"100%", "75%", "65%"};
+        JComboBox<String> layoutSelector = new JComboBox<>(layoutOptions);
+        layoutSelector.addActionListener(e -> {
+            String selected = (String) layoutSelector.getSelectedItem();
+            if ("100%".equals(selected)) virtualKeyboard.render100Percent();
+            else if ("75%".equals(selected)) virtualKeyboard.render75Percent();
+            else if ("65%".equals(selected)) virtualKeyboard.render65Percent();
+        });
+
+        confirmVisualBtn.setEnabled(false); 
+
+        topPanel.add(createMapping);
+        topPanel.add(removeMapping);
+        topPanel.add(removeAllMappings);
+        topPanel.add(new JLabel(" | Layout: "));
+        topPanel.add(layoutSelector);
+        topPanel.add(confirmVisualBtn);
+
+        // --- 2. CENTER: Virtual Keyboard ---
+        // We pass 'this' so clicks go to actionPerformed below
+        virtualKeyboard = new VirtualKeyboard(this); 
+        JScrollPane kbScroll = new JScrollPane(virtualKeyboard);
+
+        // --- 3. EAST: The Table ---
+        model = new DefaultTableModel(new String[]{"Key", "Mapped To"}, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+        table = new JTable(model);
+        table.setFocusable(false);
+        table.setRowSelectionAllowed(true);
+        JScrollPane tableScroll = new JScrollPane(table);
+        tableScroll.setPreferredSize(new Dimension(300, 0));
+
+        // --- TOP PANEL CONTAINER ---
+        JPanel northContainer = new JPanel(new GridLayout(1, 1));
+        northContainer.add(topPanel);
+
+        // --- ACTION LISTENERS ---
+
+        createMapping.addActionListener(e -> {
+            toggleInputFields(true);
+            visualStep = 1; // Start visual selection mode (Waiting for Source)
+            JOptionPane.showMessageDialog(this, "Visual Mode: Click the physical key you want to change (turns RED).");
+        });
+
+        confirmVisualBtn.addActionListener(e -> {
+            if (sourceKeyBtn != null && destKeyBtn != null) {
+                int sourceCode = sourceKeyBtn.getKeyCode();
+                
+                // CHECK: Is this key already mapped?
+                if (Main.codeToCode.containsKey(sourceCode)) {
+                    String keyName = VirtualKeyboard.getName(sourceCode);
+                    JOptionPane.showMessageDialog(this, 
+                        "The key '" + keyName + "' is already mapped!\nPlease remove the existing mapping from the list before remapping it.", 
+                        "Duplicate Mapping Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return; // Stop execution so it doesn't map
+                }
+                executeMapping(sourceKeyBtn.getKeyCode(), destKeyBtn.getKeyCode());
+                resetVisualSelection();
+            }
+        });
+
+        removeMapping.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row != -1) {
+                String keyNameInTable = (String) table.getValueAt(row, 0);
+                Main.codeToCode.entrySet().removeIf(entry -> 
+                    VirtualKeyboard.getName(entry.getKey()).equals(keyNameInTable)
+                );
+                model.removeRow(row);
+                Main.updateTextFile();
+            }
+        });
+
+        removeAllMappings.addActionListener(e -> {
+            Main.codeToCode.clear();
+            model.setRowCount(0);
+            Main.clearFile();
+        });
+
+        add(northContainer, BorderLayout.NORTH);
+        add(kbScroll, BorderLayout.CENTER);
+        add(tableScroll, BorderLayout.EAST);
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
     }
-});
 
-    removeAllMappings.addActionListener(e -> {
-        Main.codeToCode.clear();
-        model.setRowCount(0);
-        Main.clearFile();
-    });
-
-    // --- FINAL ASSEMBLY ---
-    add(northContainer, BorderLayout.NORTH);
-    add(kbScroll, BorderLayout.CENTER);
-    add(tableScroll, BorderLayout.EAST);
-
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setVisible(true);
-}
-
-    /**
-     * Shared method to handle both text and visual mapping execution
-     */
     private void executeMapping(int init, int fin) {
         Main.codeToCode.put(init, fin);
         Main.saveSingleMapping(init, fin);
@@ -184,24 +156,36 @@ public class RemapperGUI extends JFrame implements ActionListener{
         String nameFin = VirtualKeyboard.getName(fin);
 
         model.addRow(new Object[]{ nameInit, nameFin });
-        
         keymap.clear();
     }
 
-    /**
-     * This handles clicks from the VirtualKeyboard's KeyButtons
-     */
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof KeyButton) {
             KeyButton clickedBtn = (KeyButton) e.getSource();
             
-            if (visualStep == 1) { // Selecting Source
+            if (visualStep == 1) { 
                 if (sourceKeyBtn != null) sourceKeyBtn.resetColor();
                 sourceKeyBtn = clickedBtn;
                 sourceKeyBtn.setSelectedSource();
-                visualStep = 2;
-            } else if (visualStep == 2) { // Selecting Destination
+                visualStep = 2; 
+            } 
+
+            else if (visualStep == 2) { 
+
+                if (clickedBtn == sourceKeyBtn) {
+
+                    sourceKeyBtn.resetColor();
+                    sourceKeyBtn = null;
+                    if (destKeyBtn != null) {
+                        destKeyBtn.resetColor();
+                        destKeyBtn = null;
+                    }
+                    visualStep = 1; 
+                    confirmVisualBtn.setEnabled(false);
+                    return; 
+                }
+
                 if (destKeyBtn != null) destKeyBtn.resetColor();
                 destKeyBtn = clickedBtn;
                 destKeyBtn.setSelectedDest();
@@ -218,6 +202,7 @@ public class RemapperGUI extends JFrame implements ActionListener{
         visualStep = 0;
         confirmVisualBtn.setEnabled(false);
     }
+
     private void toggleInputFields(boolean visible) {
         chooseKey.setVisible(visible);
         enterKeyToMap.setVisible(visible);

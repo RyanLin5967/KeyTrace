@@ -25,6 +25,7 @@ public class VirtualKeyboard extends JPanel {
         render100Percent();
     }
 
+    
     // --- LAYOUT RENDERERS ---
 
     public void render100Percent() {
