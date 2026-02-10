@@ -33,10 +33,17 @@ public class Main implements NativeKeyListener {
     static HashMap<Integer, Integer> codeToCode = new HashMap<>(); 
     
     public void simulateKeyPress(int code, boolean pressed) throws AWTException{
-        if (pressed){  
+        if (code <= 0) {
+            System.out.println("Robot cannot press key code: " + code);
+            return;
+        }
+        if(code == 13){
+                code = 10;
+            }
+        if (pressed){   
             robot = new Robot();
             robot.keyPress(code);
-        }else{      
+        }else{       
             robot.keyRelease(code);
         }
     }      
@@ -64,6 +71,9 @@ public class Main implements NativeKeyListener {
                     }
                     if(code == 164 || code == 165){
                         code = KeyEvent.VK_ALT;
+                    }
+                    if(code == 10){
+                        code = 13;
                     }
                     if (codeToCode.containsKey(code)){    
                         int event = wParam.intValue(); 
@@ -130,16 +140,17 @@ public class Main implements NativeKeyListener {
 	}
 
 	public void nativeKeyTyped(NativeKeyEvent e) {
+        
         //System.out.println("Key Typed: " + e.getRawCode()); for testing 
         //remove this shit later
-        if (e.getRawCode() >= 65 && e.getRawCode() <= 90){
-            System.out.println("Key Typed: " + Character.toUpperCase((char)e.getRawCode()));
-        // have to manually map space + backspace since it will return "Undefined" otherwise
-        }else if(e.getRawCode() == 32) {
-            System.out.println("Key Typed: "+ "Space");
-        }else if(e.getRawCode() == 8){
-            System.out.println("Key Typed: "+ "Backspace");
-        }
+    //     if (e.getRawCode() >= 65 && e.getRawCode() <= 90){
+    //         System.out.println("Key Typed: " + Character.toUpperCase((char)e.getRawCode()));
+    //     // have to manually map space + backspace since it will return "Undefined" otherwise
+    //     }else if(e.getRawCode() == 32) {
+    //         System.out.println("Key Typed: "+ "Space");
+    //     }else if(e.getRawCode() == 8){
+    //         System.out.println("Key Typed: "+ "Backspace");
+    //     }
 	}
     public static void main(String[] args){
         //also need to allow users to put their unique keycodes
@@ -342,7 +353,7 @@ public class Main implements NativeKeyListener {
         } catch(NativeHookException ex){
             System.err.println("error registering native hook");
             ex.printStackTrace();
-        }
+        }          
         GlobalScreen.addNativeKeyListener(new Main());
     }
     public static void updateTextFile(){
@@ -364,8 +375,7 @@ public class Main implements NativeKeyListener {
         } catch (IOException ex) {
             ex.printStackTrace(); 
         }
-    }         
- 
+    }    
     public static void clearFile() { 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("src/mappings.txt"))) { 
             writer.write(""); 
