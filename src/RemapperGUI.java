@@ -22,7 +22,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
     private int visualStep = 0; // 0: Idle, 1: Source Selected, 2: Dest Selected
     private KeyButton sourceKeyBtn = null;
     private KeyButton destKeyBtn = null;
-    private JButton confirmVisualBtn = new JButton("Confirm Visual Mapping");
+    private JButton confirmVisualBtn = new JButton("Confirm Mapping");
 
     public RemapperGUI() {
         setupData();
@@ -37,7 +37,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
         stringToKeyCode.put("caps lock", KeyEvent.VK_CAPS_LOCK);
         stringToKeyCode.put("shift", KeyEvent.VK_SHIFT);
         stringToKeyCode.put("backspace", KeyEvent.VK_BACK_SPACE);
-        stringToKeyCode.put("ctrl", KeyEvent.VK_CONTROL);
+        stringToKeyCode.put("ctrl", KeyEvent.VK_CONTROL); 
         stringToKeyCode.put("enter", 13); 
     }
 
@@ -74,7 +74,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
         topPanel.add(createMapping);
         topPanel.add(removeMapping);
         topPanel.add(removeAllMappings);
-        topPanel.add(new JLabel(" | Layout: "));
+        topPanel.add(new JLabel("Size: "));
         topPanel.add(layoutSelector);
         topPanel.add(confirmVisualBtn);
 
@@ -102,7 +102,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
         createMapping.addActionListener(e -> {
             toggleInputFields(true);
             visualStep = 1; // Start visual selection mode (Waiting for Source)
-            JOptionPane.showMessageDialog(this, "Visual Mode: Click the physical key you want to change (turns RED).");
+            JOptionPane.showMessageDialog(this, "Click the physical key you want to change (turns red).");
         });
 
         confirmVisualBtn.addActionListener(e -> {
@@ -163,6 +163,17 @@ public class RemapperGUI extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof KeyButton) {
             KeyButton clickedBtn = (KeyButton) e.getSource();
+            
+            int keyCode = clickedBtn.getKeyCode();
+
+            // can't select fn key
+            if (keyCode == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "The Fn key is handled by your keyboard's hardware.\nIt cannot be remapped by the operating system.", 
+                "Hardware Restriction", 
+                JOptionPane.ERROR_MESSAGE);
+            return; 
+        }
             
             if (visualStep == 1) { 
                 if (sourceKeyBtn != null) sourceKeyBtn.resetColor();

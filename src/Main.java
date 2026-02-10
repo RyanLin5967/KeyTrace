@@ -5,15 +5,12 @@ import com.sun.jna.platform.win32.WinUser;
 import com.sun.jna.platform.win32.WinUser.HHOOK;
 import com.sun.jna.platform.win32.WinUser.MSG;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 
 import java.awt.*;
 import java.awt.event.*;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import java.util.ArrayList;
 
 import java.io.*; //should this be only the imports you need?
 
@@ -34,7 +31,6 @@ public class Main implements NativeKeyListener {
     
     public void simulateKeyPress(int code, boolean pressed) throws AWTException{
         if (code <= 0) {
-            System.out.println("Robot cannot press key code: " + code);
             return;
         }
         if(code == 13){
@@ -49,7 +45,7 @@ public class Main implements NativeKeyListener {
     }      
     public void nativeKeyPressed(NativeKeyEvent e) {  
         
-    // have to not block injected keys but block the physical keypress
+    // have to not block injected keys but block the physical keypress 
         WinUser.LowLevelKeyboardProc keyboardHook = new WinUser.LowLevelKeyboardProc() {
             
             public LRESULT callback(int nCode, WPARAM wParam, WinUser.KBDLLHOOKSTRUCT info) {
@@ -59,13 +55,16 @@ public class Main implements NativeKeyListener {
                     boolean isInjected = (info.flags & IS_INJECTED) != 0;                                                                                                     
                     if (isInjected) {
                         return User32.INSTANCE.CallNextHookEx(null, nCode, wParam,
-                                new LPARAM(com.sun.jna.Pointer.nativeValue(info.getPointer())));
+                                new LPARAM(com.sun.jna.Pointer.nativeValue(info.getPointer())));   
                     }                           
                     int code = info.vkCode;
                     //for the visual keyboard thing, make left and right distinct not just check for both
+                    if (code == 3675 || code == 3676 || code == 91 || code == 92) { 
+                        code = KeyEvent.VK_WINDOWS; 
+                    }
                     if(code == 160 || code == 161){
                         code = KeyEvent.VK_SHIFT;
-                    }
+                    } 
                     if(code == 162 || code == 163){
                         code = KeyEvent.VK_CONTROL;
                     }
@@ -74,9 +73,10 @@ public class Main implements NativeKeyListener {
                     }
                     if(code == 10){
                         code = 13;
-                    }
+                    }     
                     if (codeToCode.containsKey(code)){    
                         int event = wParam.intValue(); 
+                        
                         if (event == WinUser.WM_KEYDOWN || event == WinUser.WM_SYSKEYDOWN) {
                             try {
                                 simulateKeyPress(codeToCode.get(code), true);

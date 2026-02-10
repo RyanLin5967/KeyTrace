@@ -33,13 +33,13 @@ public class VirtualKeyboard extends JPanel {
         JPanel kb = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         
         JPanel left = new JPanel();
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.add(buildPrecisionFunctionRow()); 
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS)); 
+        left.add(buildFunctionRow()); 
         left.add(buildMainAlphaBlock(110, 90, 115));
         
         JPanel right = new JPanel();
         right.setLayout(new BoxLayout(right, BoxLayout.X_AXIS));
-        
+         
         JPanel navCol = new JPanel();
         navCol.setLayout(new BoxLayout(navCol, BoxLayout.Y_AXIS));
         navCol.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); 
@@ -68,7 +68,7 @@ public class VirtualKeyboard extends JPanel {
         
         JPanel left = new JPanel();
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.add(buildPrecisionFunctionRow());
+        left.add(buildFunctionRow());
         left.add(buildCompactAlphaBlock()); 
         
         JPanel right = new JPanel();
@@ -100,13 +100,7 @@ public class VirtualKeyboard extends JPanel {
         refresh();
     }
 
-    // --- MODULAR BLOCKS ---
-
-    /**
-     * PIXEL-PERFECT FUNCTION ROW
-     * Uses explicit struts (FUNCTION_GAP_SIZE) to force alignment.
-     */
-    private JPanel buildPrecisionFunctionRow() {
+    private JPanel buildFunctionRow() {
         JPanel row = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH; 
@@ -293,7 +287,7 @@ public class VirtualKeyboard extends JPanel {
         int pxWidth = w * UNIT_WIDTH; 
         int pxHeight = h * UNIT_HEIGHT;
         KeyButton btn = new KeyButton(text, code, pxWidth, pxHeight);
-        btn.addActionListener(keyListener);
+        btn.addActionListener(keyListener); 
         p.add(btn, c);
     }
 
