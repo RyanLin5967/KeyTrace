@@ -29,10 +29,8 @@ public class Main implements NativeKeyListener {
     static HashMap<Integer, Integer> codeToCode = new HashMap<>(); 
     private static Set<Integer> heldKeys = new HashSet<>();
     
-    // --- STATE TRACKING FOR HOLDING ---
-    private static CustomKey activeCustomKey = null; // Which combo is currently held down?
-    private static int activeTargetCode = -1;        // What key are we simulating?
-    // ----------------------------------
+    private static CustomKey activeCustomKey = null; 
+    private static int activeTargetCode = -1;      
 
     public static volatile boolean isRecording = false; 
     public static LinkedHashSet<Integer> recordingBuffer = new LinkedHashSet<>(); 
@@ -42,7 +40,6 @@ public class Main implements NativeKeyListener {
         void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
     }
 
-    // Release "Ghost" modifiers from Copilot (Win+Shift)
     private void cleanCopilotModifiers() {
         if (robot == null) {
             try { robot = new Robot(); } catch (AWTException e) {}
@@ -56,7 +53,6 @@ public class Main implements NativeKeyListener {
     private void doSafePress(int code, boolean pressed) throws AWTException {
         if (code == 13) code = 10;
         
-        // Handle Copilot/F23 (134) via Windows API
         if (code == 134 || code == KeyEvent.VK_F23) {
             byte vk = (byte) 134; 
             byte scan = (byte) 0x6E; 
@@ -70,7 +66,6 @@ public class Main implements NativeKeyListener {
         else robot.keyRelease(code);
     }
 
-    // Helper to simulate a list of keys (for mapping TO a combo)
     public void simulateCombo(CustomKey ck, boolean pressed) throws AWTException {
         if (ck != null) {
             if (pressed) {
@@ -81,18 +76,15 @@ public class Main implements NativeKeyListener {
         }
     }
 
-    // Primary simulation method
     public void simulateKeyPress(int code, boolean pressed) throws AWTException {
         if (code <= 0) return;
         if (code == 13) code = 10;
         
-        // Is target a Custom Key (Combo)?
         if (code >= 10000) {
             CustomKey ck = CustomKeyManager.getByPseudoCode(code);
             simulateCombo(ck, pressed);
             return; 
         }
-        // Standard Key
         doSafePress(code, pressed);
     }     
 
@@ -109,77 +101,58 @@ public class Main implements NativeKeyListener {
                     boolean isPress = (wParam.intValue() == WinUser.WM_KEYDOWN || wParam.intValue() == WinUser.WM_SYSKEYDOWN);
                     boolean isRelease = (wParam.intValue() == WinUser.WM_KEYUP || wParam.intValue() == WinUser.WM_SYSKEYUP);
 
-                    // --- NORMALIZE KEYS ---
                     if (code == 3675 || code == 3676 || code == 91 || code == 92) code = KeyEvent.VK_WINDOWS;
                     if(code == 160 || code == 161) code = KeyEvent.VK_SHIFT;
                     if(code == 162 || code == 163) code = KeyEvent.VK_CONTROL;
                     if(code == 164 || code == 165) code = KeyEvent.VK_ALT;
                     if(code == 10) code = 13;
 
-                    // --- RECORDING MODE ---
                     if (isRecording) {
                         if (isPress) recordingBuffer.add(code);
                         return new LRESULT(1); 
                     }
 
-                    // --- UPDATE TRACKER ---
                     if (isPress) heldKeys.add(code);
                     else if (isRelease) heldKeys.remove(code);
 
-                    // ============================================
-                    //        LOGIC FOR HOLDING CUSTOM KEYS
-                    // ============================================
-
-                    // 1. CHECK RELEASE (Did we let go of a combo?)
                     if (isRelease && activeCustomKey != null) {
-                        // If the released key belongs to the active combo, we stop holding
                         if (activeCustomKey.getRawCodes().contains(code)) {
                             try {
-                                simulateKeyPress(activeTargetCode, false); // RELEASE Target
+                                simulateKeyPress(activeTargetCode, false); 
                             } catch (Exception ex) {}
                             
                             activeCustomKey = null;
                             activeTargetCode = -1;
-                            return new LRESULT(1); // Block the release
+                            return new LRESULT(1);
                         }
                     }
-
-                    // 2. CHECK PRESS (Are we starting a combo?)
                     if (isPress && activeCustomKey == null) {
                         CustomKey matched = CustomKeyManager.match(heldKeys);
                         if (matched != null) {
                             int pseudoID = matched.getPseudoCode();
                             if (codeToCode.containsKey(pseudoID)) {
-                                // FOUND MATCH! START HOLDING.
                                 activeCustomKey = matched;
                                 activeTargetCode = codeToCode.get(pseudoID);
                                 
-                                // Cleanup Copilot Ghost Keys if needed
                                 if (matched.getRawCodes().contains(134)) {
                                     cleanCopilotModifiers();
                                 }
                                 
                                 try {
-                                    simulateKeyPress(activeTargetCode, true); // PRESS Target
+                                    simulateKeyPress(activeTargetCode, true); 
                                 } catch (Exception ex) {}
                                 
-                                return new LRESULT(1); // Block physical keys
+                                return new LRESULT(1); 
                             }
                         }
                     }
 
-                    // 3. SUSTAIN HOLD (Are we still holding the combo?)
-                    // If a combo is active, any physical press of its components should be blocked
-                    // to prevent "stuttering" or leaking to the OS.
                     if (isPress && activeCustomKey != null) {
                         if (activeCustomKey.getRawCodes().contains(code)) {
                             return new LRESULT(1);
                         }
                     }
-                    
-                    // ============================================
-                    //           STANDARD KEY LOGIC
-                    // ============================================
+
                     if (codeToCode.containsKey(code)){    
                         if (code == 134) cleanCopilotModifiers();
 

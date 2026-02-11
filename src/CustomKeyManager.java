@@ -48,7 +48,7 @@ public class CustomKeyManager {
         return null;
     }
 
-    // Matches if currently held keys contain ALL the keys required for this custom key
+    // matches if currently held keys contain all the keys required for this custom key
     public static CustomKey match(Set<Integer> pressedKeys) {
         for (CustomKey ck : customKeys) {
             if (pressedKeys.containsAll(ck.getRawCodes())) return ck;

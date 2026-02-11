@@ -11,7 +11,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
     private HashMap<String, Integer> stringToKeyCode;
     private KeyMap keymap = new KeyMap();
 
-    // UI Components
     private JTextField enterKeyToMap = new JTextField(20);
     private JTextField enterKeyToRemap = new JTextField(20);
     private JLabel chooseKey = new JLabel("choose the key to remap");
@@ -19,13 +18,12 @@ public class RemapperGUI extends JFrame implements ActionListener {
     private JButton chooseKeyToRemap = new JButton("submit");
 
     private VirtualKeyboard virtualKeyboard;
-    private int visualStep = 0; // 0: Idle, 1: Source Selected, 2: Dest Selected
+    private int visualStep = 0; // 0: Idle, 1: Source Selected, 2: Destination Selected
     private KeyButton sourceKeyBtn = null;
     private KeyButton destKeyBtn = null;
     private JButton confirmVisualBtn = new JButton("Confirm Mapping");
 
     public RemapperGUI() {
-        // Ensure data is loaded
         CustomKeyManager.load();
         setupData();
         initUI();
@@ -49,7 +47,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
         setUndecorated(true);
         setLayout(new BorderLayout());
 
-        // --- 1. TOP PANEL ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBackground(new Color(240, 240, 240));
 
@@ -83,11 +80,9 @@ public class RemapperGUI extends JFrame implements ActionListener {
         topPanel.add(layoutSelector);
         topPanel.add(confirmVisualBtn);
 
-        // --- 2. CENTER: Virtual Keyboard ---
         virtualKeyboard = new VirtualKeyboard(this); 
         JScrollPane kbScroll = new JScrollPane(virtualKeyboard);
 
-        // --- 3. EAST: The Table ---
         model = new DefaultTableModel(new String[]{"Key", "Mapped To"}, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -97,11 +92,8 @@ public class RemapperGUI extends JFrame implements ActionListener {
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setPreferredSize(new Dimension(300, 0));
 
-        // --- TOP PANEL CONTAINER ---
         JPanel northContainer = new JPanel(new GridLayout(1, 1));
         northContainer.add(topPanel);
-
-        // --- ACTION LISTENERS ---
 
         addCustomKeyBtn.addActionListener(e -> recordNewCustomKey());
 
@@ -153,13 +145,10 @@ public class RemapperGUI extends JFrame implements ActionListener {
         setVisible(true);
     }
 
-    // --- HELPER METHODS ---
-
     private void recordNewCustomKey() {
         KeyRecorder recorder = new KeyRecorder(this);
         recorder.setVisible(true);
-        
-        // BUG FIX: Check if recorder.result is null (cancelled)
+
         if (recorder.result != null && !recorder.result.isEmpty()) {
             String name = JOptionPane.showInputDialog(this, "Name this custom key (e.g. 'Copilot'):");
             if (name != null && !name.trim().isEmpty()) {
@@ -241,7 +230,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
                 int init = Integer.parseInt(codes[0]);
                 int fin = Integer.parseInt(codes[1]);
                 Main.codeToCode.put(init, fin);
-                // Use getKeyName to show proper names for custom keys
                 model.addRow(new Object[]{ getKeyName(init), getKeyName(fin) });
             }
         } catch (IOException e) { e.printStackTrace(); }

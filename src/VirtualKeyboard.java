@@ -14,7 +14,6 @@ public class VirtualKeyboard extends JPanel {
     private final int UNIT_HEIGHT = 45;
     private final int FUNCTION_GAP_SIZE = 29; 
 
-    // Single variable for the custom keys area
     private JPanel customKeysPanel;
 
     public static String getName(int code) {
@@ -27,16 +26,10 @@ public class VirtualKeyboard extends JPanel {
 
     public VirtualKeyboard(ActionListener listener) {
         this.keyListener = listener;
-        
-        // Initialize the Custom Keys Panel once
         customKeysPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         customKeysPanel.setBorder(BorderFactory.createTitledBorder("Custom Keys"));
         customKeysPanel.setPreferredSize(new Dimension(800, 150)); 
-        
-        // Populate it immediately
         rebuildCustomKeys();
-
-        // Render the default layout (this will add customKeysPanel to the GUI)
         render100Percent();
     }
 
@@ -47,14 +40,9 @@ public class VirtualKeyboard extends JPanel {
         List<CustomKey> keys = CustomKeyManager.customKeys;
 
         for (CustomKey ck : keys) {
-            // Slightly wider to fit names
             KeyButton btn = new KeyButton(ck.getName(), ck.getPseudoCode(), UNIT_WIDTH + 20, UNIT_HEIGHT);
-            
-            // STYLE: Light Blue
             btn.setBackground(new Color(173, 216, 230)); 
             btn.addActionListener(keyListener);
-            
-            // FEATURE: Right-Click to Remove
             btn.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     if (SwingUtilities.isRightMouseButton(e)) {
@@ -82,13 +70,10 @@ public class VirtualKeyboard extends JPanel {
         repaint();
     }
 
-    // --- RENDER METHODS ---
-
     public void render100Percent() {
         this.removeAll();
-        setLayout(new BorderLayout()); // Ensure structure is Center/South
+        setLayout(new BorderLayout()); 
 
-        // 1. Build the Main Keyboard (100%)
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         
         JPanel kb = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
@@ -120,9 +105,8 @@ public class VirtualKeyboard extends JPanel {
         
         mainBoard.add(kb);
 
-        // 2. Add Components to Layout
         add(mainBoard, BorderLayout.CENTER);
-        add(customKeysPanel, BorderLayout.SOUTH); // Always add custom keys at bottom
+        add(customKeysPanel, BorderLayout.SOUTH); 
 
         refresh();
     }
@@ -130,8 +114,6 @@ public class VirtualKeyboard extends JPanel {
     public void render75Percent() {
         this.removeAll();
         setLayout(new BorderLayout());
-
-        // 1. Build Main Keyboard (75%)
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         JPanel internal = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         
@@ -149,7 +131,6 @@ public class VirtualKeyboard extends JPanel {
         internal.add(right);
         mainBoard.add(internal);
 
-        // 2. Add Components to Layout
         add(mainBoard, BorderLayout.CENTER);
         add(customKeysPanel, BorderLayout.SOUTH);
 
@@ -160,7 +141,6 @@ public class VirtualKeyboard extends JPanel {
         this.removeAll();
         setLayout(new BorderLayout());
 
-        // 1. Build Main Keyboard (65%)
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         JPanel internal = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         
@@ -176,14 +156,11 @@ public class VirtualKeyboard extends JPanel {
         internal.add(right);
         mainBoard.add(internal);
 
-        // 2. Add Components to Layout
         add(mainBoard, BorderLayout.CENTER);
         add(customKeysPanel, BorderLayout.SOUTH);
 
         refresh();
     }
-    
-    // --- BUILDERS (Unchanged) ---
 
     private JPanel buildFunctionRow() {
         JPanel row = new JPanel(new GridBagLayout());

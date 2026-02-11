@@ -3,7 +3,7 @@ import java.awt.*;
 
 public class KeyButton extends JButton {
     private int keyCode;
-    private Color defaultColor; // Stores the "Resting" color (White or Blue)
+    private Color defaultColor; 
 
     public KeyButton(String text, int keyCode, int w, int h) {
         super(text);
@@ -12,8 +12,7 @@ public class KeyButton extends JButton {
         this.setMargin(new Insets(0, 0, 0, 0));
         this.setFocusable(false);
         this.setFont(new Font("SansSerif", Font.BOLD, 10));
-        
-        // Initialize default
+
         this.defaultColor = Color.WHITE;
         this.setBackground(defaultColor);
         this.setBorder(BorderFactory.createLineBorder(Color.GRAY));
@@ -36,7 +35,7 @@ public class KeyButton extends JButton {
     }
 
     public void resetColor() {
-        super.setBackground(this.defaultColor); // Reverts to Blue (if custom) or White
+        super.setBackground(this.defaultColor);
     }
 
     public int getKeyCode() {

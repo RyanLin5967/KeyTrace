@@ -29,11 +29,9 @@ public class KeyRecorder extends JDialog {
         btnPanel.add(doneBtn);
         add(btnPanel, BorderLayout.SOUTH);
 
-        // START RECORDING IN MAIN
         Main.recordingBuffer.clear();
         Main.isRecording = true;
 
-        // Timer to update UI based on Main's buffer
         pollingTimer = new javax.swing.Timer(50, e -> {
             if (!Main.recordingBuffer.isEmpty()) {
                 statusLabel.setText("Detected: " + getKeyNames(Main.recordingBuffer));
@@ -43,22 +41,19 @@ public class KeyRecorder extends JDialog {
         });
         pollingTimer.start();
 
-        // --- BUTTON ACTIONS ---
-        
         clearBtn.addActionListener(e -> { 
             Main.recordingBuffer.clear();
             statusLabel.setText("Cleared.");
         });
 
         cancelBtn.addActionListener(e -> {
-            closeDialog(false); // False = Cancelled
+            closeDialog(false); 
         });
 
         doneBtn.addActionListener(e -> {
-            closeDialog(true); // True = Save
+            closeDialog(true);
         });
  
-        // Handle "X" button correctly
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -69,12 +64,12 @@ public class KeyRecorder extends JDialog {
 
     private void closeDialog(boolean save) {
         pollingTimer.stop();
-        Main.isRecording = false; // Stop the hook from blocking keys
+        Main.isRecording = false; 
         
         if (save && !Main.recordingBuffer.isEmpty()) {
             result = new ArrayList<>(Main.recordingBuffer);
         } else {
-            result = null; // Explicitly null so GUI knows we cancelled
+            result = null; 
         }
         dispose();
     }
