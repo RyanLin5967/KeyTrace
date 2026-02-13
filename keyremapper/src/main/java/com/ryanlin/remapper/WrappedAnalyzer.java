@@ -64,28 +64,24 @@ public class WrappedAnalyzer {
         String type = "The Generalist";
         String desc = "Balanced. Efficient. You use the whole keyboard.";
 
-        // Gamer Check
         if (wasdCount > maxScore) {
             maxScore = wasdCount;
             type = "The Gamer";
-            desc = "WASD is your home. You spent the year moving forward.";
+            desc = "You spent more time moving in games than typing text.";
         }
         
-        // Developer Check (Weighted x5 because code symbols are rarer than letters)
         if ((codeCount * 5) > maxScore) { 
             maxScore = codeCount * 5;
             type = "The Developer";
-            desc = "Semicolons & Brackets. You speak the language of machines.";
+            desc = "Your keyboard usage aligns with writing and debugging code.";
         }
         
-        // Editor Check
         if (editCount > maxScore) {
             maxScore = editCount;
             type = "The Editor";
-            desc = "Perfectionist. You deleted almost as much as you wrote.";
+            desc = "You spent more time moving in applications than typing text.";
         }
         
-        // StackOverflow User Check
         if ((copyPasteCount * 100) > maxScore) {
              maxScore = copyPasteCount * 100;
              type = "The Vibe Coder";

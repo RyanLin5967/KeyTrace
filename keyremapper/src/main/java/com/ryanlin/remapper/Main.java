@@ -155,8 +155,13 @@ public class Main {
                     // 5. HEATMAP & COMBOS
                     // Use !wasDown for repeats, but relies on isPress state
                     if (isPress && !wasDown) { // Strict single count
-                        HeatmapManager.setCount(code);
+                        int codeToLog = code;
+                        //make sure to log the key that's sending the signal
+                        if (activeCustomKey == null && codeToCode.containsKey(code)) {
+                                codeToLog = codeToCode.get(code);
+                        }
                         
+                        HeatmapManager.setCount(codeToLog);
                         boolean hasModifier = heldKeys.contains(17) || heldKeys.contains(18) || heldKeys.contains(16) || heldKeys.contains(524);
                         boolean isCurrentKeyModifier = (code == 17 || code == 18 || code == 16 || code == 524);
 
