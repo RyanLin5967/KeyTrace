@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 
 public class VirtualKeyboard extends JPanel {
     private ActionListener keyListener;
@@ -78,8 +79,6 @@ public class VirtualKeyboard extends JPanel {
         render100Percent();
     }
 
-    // --- TOGGLE METHODS ---
-
     public void toggleHeatmap() {
         isHeatmapOn = !isHeatmapOn;
         if (isHeatmapOn) {
@@ -92,21 +91,18 @@ public class VirtualKeyboard extends JPanel {
     
     public void toggleShiftMode() {
         isShifted = !isShifted;
-        updateKeyLabels(); // Change text (1 -> !)
-        repaintHeatmap();  // Change colors (Heatmap for 1 -> Heatmap for !)
+        updateKeyLabels();
+        repaintHeatmap();
     }
 
-    // Updates button text based on Shift state
-    private void updateKeyLabels() {
+    private void updateKeyLabels() { // for when shifted
         List<KeyButton> buttons = getAllButtons();
         for (KeyButton btn : buttons) {
             int code = btn.getKeyCode();
             if (isShifted && shiftMap.containsKey(code)) {
                 btn.setText(shiftMap.get(code));
             } else {
-                // Revert to original name (but keep short version)
                 String name = getName(code);
-                // Fix: Ensure "Num 1" displays as "1"
                 if (name.startsWith("Num ")) {
                     btn.setText(name.substring(4)); 
                 } else {
@@ -118,52 +114,65 @@ public class VirtualKeyboard extends JPanel {
     }
 
     public void repaintHeatmap() {
-    // 1. USE GLOBAL MAX (Fixes "Red Hashtag" issue)
-    long maxCount = HeatmapManager.getGlobalMax(); 
+        long maxCount = HeatmapManager.getGlobalMax(); 
+        java.util.List<KeyButton> buttons = getAllButtons();
 
-    java.util.List<KeyButton> buttons = getAllButtons();
+        // 1. GET FLATLAF'S DEFAULT COLOR DYNAMICALLY
+        // This ensures it works for both Light and Dark themes automatically.
+        Color baseColor = UIManager.getColor("Button.background");
+        if (baseColor == null) baseColor = Color.GRAY; // Fallback just in case
 
-    for (KeyButton btn : buttons) {
-        // FIX: If button is locked (Selected for mapping), SKIP IT.
-        if (btn.isLocked()) continue;
+        // 2. DEFINE YOUR TARGET "HOT" COLOR
+        Color hotColor = new Color(255, 40, 40); // Very Bright Red
 
-        if (!isHeatmapOn) {
-            btn.resetStyle();
-            continue;
+        for (KeyButton btn : buttons) {
+            if (btn.isLocked()) continue;
+
+            // If heatmap is off, reset everything to default
+            if (!isHeatmapOn) {
+                btn.resetStyle(); 
+                continue;
+            }
+            
+            // Prepare the button for custom coloring
+            btn.setToolTipText(""); 
+            btn.setOpaque(true);
+            btn.setBorderPainted(true); 
+
+            int code = btn.getKeyCode();
+            long count;
+
+            if (isShifted && shiftMap.containsKey(code)) {
+                String baseName = getName(code);
+                String comboKey = "Shift+" + baseName;
+                count = HeatmapManager.comboCounts.getOrDefault(comboKey, 0L);
+            } else {
+                count = HeatmapManager.getCount(code);
+            }
+
+            if (count == 0) {
+                btn.setBackground(UIManager.getColor("Button.background")); 
+                continue;
+            }
+
+            float ratio = (maxCount > 0) ? (float) count / (float) maxCount : 0f;
+
+            int r = interpolate(baseColor.getRed(), hotColor.getRed(), ratio);
+            int g = interpolate(baseColor.getGreen(), hotColor.getGreen(), ratio);
+            int b = interpolate(baseColor.getBlue(), hotColor.getBlue(), ratio);
+
+            btn.setBackground(new Color(r, g, b));
         }
         
-        btn.setToolTipText(""); 
-        btn.setOpaque(true);
-        btn.setBorderPainted(true); 
-        btn.setContentAreaFilled(true); 
-
-        int code = btn.getKeyCode();
-        long count = 0;
-
-        // 2. SMART COUNT LOOKUP
-        // Only look up "Shift+" if the key actually changes (1 -> !)
-        if (isShifted && shiftMap.containsKey(code)) {
-            String baseName = getName(code);
-            String comboKey = "Shift+" + baseName;
-            count = HeatmapManager.comboCounts.getOrDefault(comboKey, 0L);
-        } else {
-            count = HeatmapManager.getCount(code);
-        }
-
-        float ratio = (maxCount > 0) ? (float) count / (float) maxCount : 0f;
-        float hue = 0.66f - (ratio * 0.66f);
-        if (hue < 0) hue = 0; 
-
-        Color col = Color.getHSBColor(hue, 0.8f, 0.9f);
-        btn.setBackground(col);
-        btn.repaint();
+        this.revalidate();
+        this.repaint();
     }
-    
-    this.revalidate();
-    this.repaint();
-}
 
-    // Helper to get all buttons
+    private int interpolate(int start, int end, float ratio) {
+        int val = start + (int) ((end - start) * ratio);
+        return Math.max(0, Math.min(255, val)); 
+    }
+
     private List<KeyButton> getAllButtons() {
         List<KeyButton> list = new ArrayList<>();
         collectButtons(this, list); 
@@ -188,8 +197,6 @@ public class VirtualKeyboard extends JPanel {
         return codeToNameMap.getOrDefault(code, "Key " + code);
     }
 
-    // --- REBUILD & RENDER METHODS ---
-
     public void rebuildCustomKeys() {
         if (customKeysPanel == null) return;
         customKeysPanel.removeAll();
@@ -197,7 +204,7 @@ public class VirtualKeyboard extends JPanel {
         for (CustomKey ck : keys) {
             if (ck.isHidden()) continue;
             KeyButton btn = new KeyButton(ck.getName(), ck.getPseudoCode(), UNIT_WIDTH + 20, UNIT_HEIGHT);
-            if (isHeatmapOn) btn.setOpaque(true); else btn.setBackground(null);
+            if (isHeatmapOn) btn.setOpaque(true); else btn.setBackground(UIManager.getColor("Button.background"));
             btn.addActionListener(keyListener);
             btn.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {

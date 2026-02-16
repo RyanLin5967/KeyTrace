@@ -16,12 +16,13 @@ public class HeatmapManager {
         if (comboData != null) comboCounts.putAll(comboData);
     }
     public static void setCount(int code){
-        // long current = counter.get(code);
-        // counter.put(code, current++);
         counter.merge(code, 1L, Long::sum);
     }
     public static long getCount(int code){
         return counter.getOrDefault(code, 0L);
+    }
+    public static void setExplicitCount(int code, long value) {
+        counter.put(code, value);
     }
     public static void recordCombo(String comboKey) {
         comboCounts.merge(comboKey, 1L, Long::sum);
@@ -56,8 +57,6 @@ public class HeatmapManager {
         
         return String.join("+", parts);
     }
-    // Add this to HeatmapManager.java
-
     public static long getGlobalMax() {
         long maxKey = counter.values().stream().mapToLong(l -> l).max().orElse(1L);
         long maxCombo = comboCounts.values().stream().mapToLong(l -> l).max().orElse(1L);

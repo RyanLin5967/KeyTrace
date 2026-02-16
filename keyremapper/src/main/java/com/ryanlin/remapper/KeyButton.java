@@ -21,7 +21,7 @@ public class KeyButton extends JButton {
         this.setFocusable(false);
         
         // Default styling
-        this.setBackground(null);
+        this.setBackground(UIManager.getColor("Button.background"));
         this.setOpaque(true);
         this.setContentAreaFilled(true);
         this.setBorderPainted(true);
@@ -56,7 +56,7 @@ public class KeyButton extends JButton {
         isSelectedSource = false; // Unlock
         isSelectedDest = false;   // Unlock
         
-        this.setBackground(null);
+        this.setBackground(UIManager.getColor("Button.background"));
         this.setForeground(null);
         this.setOpaque(true);
         this.setContentAreaFilled(true);

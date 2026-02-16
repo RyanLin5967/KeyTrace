@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,8 @@ public class RemapperGUI extends JFrame implements ActionListener {
     private JLabel chooseKey = new JLabel("choose the key to remap");
     private JLabel chooseRemap = new JLabel("choose the key it'll remap to");
     private JButton chooseKeyToRemap = new JButton("submit");
+    private JButton createMapping = new JButton("Create Mapping");
+    private Color orgColor = createMapping.getBackground();
 
     private VirtualKeyboard virtualKeyboard;
     private int visualStep = 0; // 0: Idle, 1: Source Selected, 2: Destination Selected
@@ -26,10 +29,9 @@ public class RemapperGUI extends JFrame implements ActionListener {
     private JButton confirmVisualBtn = new JButton("Confirm Mapping");
     
     public RemapperGUI() {
-        // ConfigManager.load() was already called in Main, so data is ready
         
         initUI();
-        loadExistingMappings(); // Now loads from memory
+        loadExistingMappings();
         pack();
         setLocationRelativeTo(null);
     }
@@ -46,48 +48,13 @@ public class RemapperGUI extends JFrame implements ActionListener {
         JButton heatmapBtn = new JButton("Show Heatmap");
         heatmapBtn.setFocusable(false);
 
-        heatmapBtn.addActionListener(e -> {
-            virtualKeyboard.toggleHeatmap();
-            if (VirtualKeyboard.isHeatmapOn == true) {
-                heatmapBtn.setText("Hide Heatmap");
-            } else {
-                heatmapBtn.setText("Show Heatmap");
-            }
-        });
-
-        topPanel.add(heatmapBtn);
-
         JButton shiftToggleBtn = new JButton("Shift");
         shiftToggleBtn.setFocusable(false);
-                        
-        shiftToggleBtn.addActionListener(e -> {
-            virtualKeyboard.toggleShiftMode();
-            
-            // Update button text to show state
-            if (VirtualKeyboard.isShifted) {
-                shiftToggleBtn.setText("Unshift");
-            } else {
-                shiftToggleBtn.setText("Shift");
-                shiftToggleBtn.setBackground(null);
-            }
-        });
-
-        topPanel.add(shiftToggleBtn);
-        JButton wrappedBtn = new JButton("2026 Wrapped");
-        wrappedBtn.setFocusable(false);
-        wrappedBtn.setBackground(null); // Distinct Green Color
-
-        wrappedBtn.addActionListener(e -> {
-            // Open the Wrapped Window
-            WrappedWindow wrapped = new WrappedWindow((JFrame) SwingUtilities.getWindowAncestor(this));
-            wrapped.setVisible(true);
-        });
-
-        // Add it to your topPanel or wherever you keep the main buttons
-        topPanel.add(wrappedBtn);
-        JButton createMapping = new JButton("create keymap");
-        JButton removeMapping = new JButton("remove selected mapping");
-        JButton removeAllMappings = new JButton("remove all mappings");
+        
+        //createMapping = new JButton("Create mapping");
+        
+        JButton removeMapping = new JButton("Remove selected mapping");
+        JButton removeAllMappings = new JButton("Remove all mappings");
         JButton addCustomKeyBtn = new JButton("Add Custom Key");
 
         createMapping.setFocusable(false);
@@ -139,15 +106,17 @@ public class RemapperGUI extends JFrame implements ActionListener {
         addCustomKeyBtn.addActionListener(e -> recordNewCustomKey());
 
         createMapping.addActionListener(e -> {
+            createMapping.setBackground(Color.GRAY);
             toggleInputFields(true);
             visualStep = 1; 
         });
+        confirmVisualBtn.setFocusable(false);
 
         confirmVisualBtn.addActionListener(e -> {
             if (sourceKeyBtn != null && destKeyBtn != null) {
                 
                 int finalSourceCode;
-                
+                createMapping.setBackground(null);
                 // CHECK IF WE ARE MAPPING A SHIFT-COMBO
                 Boolean isShifted = (Boolean) sourceKeyBtn.getClientProperty("isShiftedCombo");
                 if (isShifted != null && isShifted) {
@@ -164,7 +133,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
                     JOptionPane.showMessageDialog(this, "This mapping already exists. Remove it first.");
                     return; 
                 }
-
                 executeMapping(finalSourceCode, destCode);
                 resetVisualSelection();
             }
@@ -181,7 +149,41 @@ public class RemapperGUI extends JFrame implements ActionListener {
                 ConfigManager.save(); // Save to JSON
             }
         });
+        
+        topPanel.add(shiftToggleBtn);
 
+        heatmapBtn.addActionListener(e -> {
+            virtualKeyboard.toggleHeatmap();
+            if (VirtualKeyboard.isHeatmapOn == true) {
+                heatmapBtn.setText("Hide Heatmap");
+            } else {
+                heatmapBtn.setText("Show Heatmap");
+            }
+        });
+
+        topPanel.add(heatmapBtn);
+
+        shiftToggleBtn.addActionListener(e -> {
+            virtualKeyboard.toggleShiftMode();
+            
+            // Update button text to show state
+            if (VirtualKeyboard.isShifted) {
+                shiftToggleBtn.setText("Unshift");
+            } else {
+                shiftToggleBtn.setText("Shift");
+                shiftToggleBtn.setBackground(null);
+            }
+        });
+        
+        JButton wrappedBtn = new JButton("2026 Wrapped");
+        wrappedBtn.setFocusable(false);
+
+        wrappedBtn.addActionListener(e -> {
+            WrappedWindow wrapped = new WrappedWindow((JFrame) SwingUtilities.getWindowAncestor(this));
+            wrapped.setVisible(true);
+        });
+
+        topPanel.add(wrappedBtn);
         removeAllMappings.addActionListener(e -> {
             Main.codeToCode.clear();
             model.setRowCount(0);
@@ -192,7 +194,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
         add(kbScroll, BorderLayout.CENTER);
         add(tableScroll, BorderLayout.EAST);
 
-        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
 
@@ -202,7 +204,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
 
         if (recorder.result != null && !recorder.result.isEmpty()) {
             
-            // --- CHECK 1: DUPLICATE COMBINATION ---
             if (CustomKeyManager.isCombinationTaken(recorder.result)) {
                 JOptionPane.showMessageDialog(this, 
                     "This key combination is already used by another Custom Key!", 
@@ -216,7 +217,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
             if (name != null && !name.trim().isEmpty()) {
                 name = name.trim();
 
-                // --- CHECK 2: DUPLICATE NAME ---
                 if (CustomKeyManager.isNameTaken(name)) {
                     JOptionPane.showMessageDialog(this, 
                         "A Custom Key with this name already exists!", 
@@ -225,14 +225,54 @@ public class RemapperGUI extends JFrame implements ActionListener {
                     return;
                 }
 
-                // Create and Save (calls ConfigManager internally)
                 CustomKeyManager.add(name, recorder.result);
+                List<Integer> modifiers = new ArrayList<>();
+        int primaryKey = -1;
+
+        // separate Modifiers from the Main Key
+        for (int code : recorder.result) {
+            if (isModifier(code)) {
+                modifiers.add(code);
+            } else {
+                primaryKey = code;
+            }
+        }
+
+        // We can only backfill if we have exactly 1 primary key (e.g. "Ctrl+C", not "Ctrl+C+D")
+        if (primaryKey != -1) {
+            StringBuilder lookupName = new StringBuilder();
+
+            // Append modifiers in a standard order (optional, but good for consistency)
+            // You might need to adjust this order to match how HeatmapManager saves them.
+            if (modifiers.contains(17)) lookupName.append("Ctrl+");
+            if (modifiers.contains(18)) lookupName.append("Alt+");
+            if (modifiers.contains(16)) lookupName.append("Shift+");
+            if (modifiers.contains(524)) lookupName.append("Win+");
+
+            lookupName.append(VirtualKeyboard.getName(primaryKey));
+            
+            String finalLookupString = lookupName.toString(); // e.g., "Ctrl+C" or "Shift+1"
+
+            // CHECK THE DATABASE
+            if (HeatmapManager.comboCounts.containsKey(finalLookupString)) {
+                long history = HeatmapManager.comboCounts.get(finalLookupString);
                 
+                if (history > 0) {
+                    CustomKey newKey = CustomKeyManager.customKeys.get(CustomKeyManager.customKeys.size() - 1);
+                    int newKeyID = newKey.getPseudoCode();
+                    
+                    HeatmapManager.setExplicitCount(newKeyID, history);
+                }
+            }
+        }
                 virtualKeyboard.rebuildCustomKeys();
             }
         }
     }
 
+    private boolean isModifier(int code) {
+        return code == 16 || code == 17 || code == 18 || code == 524 || code == 91 || code == 92;  
+    }
     private void executeMapping(int init, int fin) {
         Main.codeToCode.put(init, fin);
         ConfigManager.save(); // Save to JSON
@@ -251,16 +291,14 @@ public class RemapperGUI extends JFrame implements ActionListener {
             int keyCode = clickedBtn.getKeyCode();
 
             if (keyCode == 0) {
-                JOptionPane.showMessageDialog(this, "The Fn key cannot be remapped.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "The Fn key cannot be remapped nor can its keypresses be recorded.", "Error", JOptionPane.ERROR_MESSAGE);
                 return; 
             }
             
-            // --- STEP 1: SOURCE SELECTION ---
             if (visualStep == 1) { 
                 if (sourceKeyBtn != null) sourceKeyBtn.resetColor();
                 sourceKeyBtn = clickedBtn;
                 
-                // CHECK FOR SHIFT-COMBO MAPPING (Silent Logic)
                 if (VirtualKeyboard.isShifted && VirtualKeyboard.isKeyShifted(keyCode)) {
                     String baseName = VirtualKeyboard.getName(keyCode);
                     String customName = "Shift+" + baseName;
@@ -277,23 +315,16 @@ public class RemapperGUI extends JFrame implements ActionListener {
                         }                                  
                     }
 
-                    if (existing == null) {                                                                                                 
-                        // Create the key                                                                                                                                                                
+                    if (existing == null) {                                                                                                                                                                                                                                                        
                         CustomKeyManager.add(customName, combo);
-                        
-                        // Retrieve it
                         existing = CustomKeyManager.getByPseudoCode(
                             CustomKeyManager.customKeys.get(CustomKeyManager.customKeys.size()-1).getPseudoCode()
                         );
                         
-                        // FIX: MARK IT AS HIDDEN
                         existing.setHidden(true);
-                        
-                        // We still call rebuild, but now it won't show up!
                         virtualKeyboard.rebuildCustomKeys();
                     }                                                          
                                                                                         
-                    // ... rest of logic attaches the ID to the button ...
                     sourceKeyBtn.putClientProperty("isShiftedCombo", true);
                     sourceKeyBtn.putClientProperty("shiftedPseudoCode", existing.getPseudoCode());
                 }
@@ -301,7 +332,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
                 sourceKeyBtn.setSelectedSource();
                 visualStep = 2; 
             } 
-            // --- STEP 2: DESTINATION SELECTION ---
             else if (visualStep == 2) { 
                 if (clickedBtn == sourceKeyBtn) {
                     resetVisualSelection();
@@ -319,6 +349,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
     if (sourceKeyBtn != null) sourceKeyBtn.resetStyle();
     if (destKeyBtn != null) destKeyBtn.resetStyle();
     
+    createMapping.setBackground(orgColor);
     sourceKeyBtn = null;
     destKeyBtn = null;
     visualStep = 0;
@@ -338,7 +369,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
     }
 
     private void loadExistingMappings() {
-        // Updated: Iterates over memory (Main.codeToCode) instead of reading a file
         for (Map.Entry<Integer, Integer> entry : Main.codeToCode.entrySet()) {
             int init = entry.getKey();
             int fin = entry.getValue();
@@ -369,6 +399,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
             entry.getKey() == customKeyCode || entry.getValue() == customKeyCode
         );
         
-        ConfigManager.save(); // Save to JSON
+        ConfigManager.save();
     }
 }
