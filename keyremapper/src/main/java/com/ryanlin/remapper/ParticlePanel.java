@@ -18,7 +18,7 @@ public class ParticlePanel extends JPanel {
 
     private int currentTheme = THEME_DEFAULT;
     private List<Particle> particles = new ArrayList<>();
-    private List<Confetti> confettiList = new ArrayList<>(); // New List for Confetti
+    private List<Confetti> confettiList = new ArrayList<>(); 
     private Random random = new Random();
     
     private BufferedImage img1, img2;
@@ -42,7 +42,6 @@ public class ParticlePanel extends JPanel {
         this.img2 = i2;
     }
     
-    // NEW: Trigger Explosion
     public void spawnConfetti() {
         int w = getWidth();
         int h = getHeight();
@@ -56,15 +55,13 @@ public class ParticlePanel extends JPanel {
         int h = getHeight();
         if (w == 0) return;
         
-        // Update regular particles
         for (Particle p : particles) p.update(w, h);
         
-        // Update Confetti (Remove when off screen)
         Iterator<Confetti> it = confettiList.iterator();
         while (it.hasNext()) {
             Confetti c = it.next();
             c.update();
-            if (c.y > h + 50) it.remove(); // Remove fallen confetti
+            if (c.y > h + 50) it.remove();
         }
     }
 
@@ -79,7 +76,7 @@ public class ParticlePanel extends JPanel {
         Color bot = new Color(20, 20, 30);
         if (currentTheme == THEME_FIRE) bot = new Color(50, 10, 10);
         if (currentTheme == THEME_MATRIX) bot = new Color(0, 20, 0);
-        if (currentTheme == THEME_GAMER) bot = new Color(40, 0, 0); // Dark Red
+        if (currentTheme == THEME_GAMER) bot = new Color(40, 0, 0); 
         
         GradientPaint gp = new GradientPaint(0, 0, top, 0, getHeight(), bot);
         g2.setPaint(gp);
@@ -99,10 +96,8 @@ public class ParticlePanel extends JPanel {
             g2.drawImage(img2, x, y, 300, 300, null);
         }
 
-        // 3. Regular Particles
         for (Particle p : particles) p.draw(g2);
         
-        // 4. Confetti
         for (Confetti c : confettiList) c.draw(g2);
     }
     private class Particle {
@@ -126,7 +121,7 @@ public class ParticlePanel extends JPanel {
                     size = 16; shape = 2; break;
                 case THEME_GAMER:
                     vx = (random.nextFloat() - 0.5f) * 20; vy = (random.nextFloat() - 0.5f) * 20;
-                    color = new Color(255, 0, 0); // Solid Red
+                    color = new Color(255, 0, 0); 
                     size = random.nextInt(6) + 3; shape = 1; break;
                 case THEME_RAIN:
                     vx = 0; vy = 15;
@@ -146,7 +141,6 @@ public class ParticlePanel extends JPanel {
         }
 
         public void draw(Graphics2D g2) {
-            // REMOVED ALPHA COMPOSITE FOR SOLID LOOK
             g2.setColor(color);
             if (shape == 0) g2.fillOval((int)x, (int)y, (int)size, (int)size);
             else if (shape == 1) g2.fillRect((int)x, (int)y, (int)size, (int)size);
@@ -154,10 +148,9 @@ public class ParticlePanel extends JPanel {
                 g2.setFont(new Font("Monospaced", Font.BOLD, (int)size));
                 g2.drawString(String.valueOf((char)(random.nextInt(26) + 'A')), x, y);
             }
-        }
+        }     
     }
     
-    // --- NEW CONFETTI CLASS ---
     private class Confetti {
         float x, y, vx, vy;
         Color color;
@@ -166,20 +159,17 @@ public class ParticlePanel extends JPanel {
         public Confetti(int startX, int startY) {
             x = startX;
             y = startY;
-            // Explosion Velocity
             vx = (random.nextFloat() - 0.5f) * 55;
-            vy = (random.nextFloat() - 0.5f) * 30-20; // Slightly Up
+            vy = (random.nextFloat() - 0.5f) * 30-20; 
             size = random.nextInt(8);
-            
-            // Random Bright Colors
             color = Color.getHSBColor(random.nextFloat(), 0.8f, 1.0f);
         }
         
         public void update() {
             x += vx;
             y += vy;
-            vy += 0.9; // Gravity
-            vx *= 0.95; // Air resistance
+            vy += 0.9;
+            vx *= 0.95;
         }
         
         public void draw(Graphics2D g2) {

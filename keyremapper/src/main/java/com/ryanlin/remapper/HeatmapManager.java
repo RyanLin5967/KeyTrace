@@ -5,11 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
 
 public class HeatmapManager {
     
-    public static ConcurrentHashMap<Integer, Long> counter = new ConcurrentHashMap<>(); //map code -> count
-    public static ConcurrentHashMap<String, Long> comboCounts = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<Integer, Long> counter = new ConcurrentHashMap<>(); // map code -> count
+    public static ConcurrentHashMap<String, Long> comboCounts = new ConcurrentHashMap<>();// map combo -> count
     
     public static void load(Map<Integer, Long> keyData, Map<String, Long> comboData) {
         if (keyData != null) counter.putAll(keyData);
@@ -61,5 +62,19 @@ public class HeatmapManager {
         long maxKey = counter.values().stream().mapToLong(l -> l).max().orElse(1L);
         long maxCombo = comboCounts.values().stream().mapToLong(l -> l).max().orElse(1L);
         return Math.max(maxKey, maxCombo);
+    }
+    public static String getStandardComboString(Set<Integer> modifiers, int triggerKey) {
+        List<Integer> sortedMods = new ArrayList<>(modifiers);
+        Collections.sort(sortedMods);
+        
+        StringBuilder sb = new StringBuilder();
+        for (int mod : sortedMods) {
+            if (mod == 16) sb.append("Shift+");
+            else if (mod == 17) sb.append("Ctrl+");
+            else if (mod == 18) sb.append("Alt+");
+            else if (mod == 524) sb.append("Win+");
+        }
+        sb.append(VirtualKeyboard.getName(triggerKey));
+        return sb.toString();
     }
 }

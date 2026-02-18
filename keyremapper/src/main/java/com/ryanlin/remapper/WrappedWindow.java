@@ -19,18 +19,16 @@ public class WrappedWindow extends JFrame {
 
     // Visuals
     private ParticlePanel mainPanel; 
-    private JLabel mainText;
-    private JLabel subText;
-    private JLabel extraText;
+    private AnimatedLabel mainText;
+    private AnimatedLabel subText;
+    private AnimatedLabel extraText;
     
-    // TIMERS (The Fix: Track them so we can kill them)
     private Timer backgroundLoopTimer;
-    private Timer activeCountUpTimer; // <--- NEW: Tracks text animations
+    private Timer activeCountUpTimer; 
 
     // Images
     private BufferedImage currentImage1 = null;
     private BufferedImage currentImage2 = null;
-    private BufferedImage currentImage3 = null;
 
     // Bars
     private JPanel barsPanel; 
@@ -91,11 +89,14 @@ public class WrappedWindow extends JFrame {
         setVisible(true);
     }
     
-    // --- THE FIX: STOP OLD ANIMATIONS ---
     private void stopActiveAnimations() {
         if (activeCountUpTimer != null && activeCountUpTimer.isRunning()) {
             activeCountUpTimer.stop();
         }
+        // --- FIX: STOP LABEL ANIMATIONS SO THEY DON'T BLEED OVER ---
+        mainText.stopAnimation();
+        subText.stopAnimation();
+        extraText.stopAnimation();
     }
 
     private void initContentComponents() {
@@ -103,14 +104,14 @@ public class WrappedWindow extends JFrame {
         gbc.gridx = 0; gbc.gridy = 0; gbc.insets = new Insets(20, 20, 20, 20);
         gbc.anchor = GridBagConstraints.CENTER;
 
-        mainText = new JLabel("", SwingConstants.CENTER);
-        mainText.setFont(new Font("Arial", Font.BOLD, 100)); 
+        mainText = new AnimatedLabel("", Font.BOLD, 100); 
+        mainText.setHorizontalAlignment(SwingConstants.CENTER);
         mainText.setForeground(Color.WHITE);
         mainPanel.add(mainText, gbc);
 
         gbc.gridy++;
-        subText = new JLabel("", SwingConstants.CENTER);
-        subText.setFont(new Font("Arial", Font.PLAIN, 40));
+        subText = new AnimatedLabel("", Font.PLAIN, 40);
+        subText.setHorizontalAlignment(SwingConstants.CENTER);
         subText.setForeground(Color.LIGHT_GRAY);
         mainPanel.add(subText, gbc);
 
@@ -121,8 +122,8 @@ public class WrappedWindow extends JFrame {
         mainPanel.add(barsPanel, gbc);
 
         gbc.gridy++;
-        extraText = new JLabel("", SwingConstants.CENTER);
-        extraText.setFont(new Font("Arial", Font.ITALIC, 20));
+        extraText = new AnimatedLabel("", Font.ITALIC, 20);
+        extraText.setHorizontalAlignment(SwingConstants.CENTER);
         extraText.setForeground(Color.GRAY);
         mainPanel.add(extraText, gbc);
     }
@@ -141,8 +142,7 @@ public class WrappedWindow extends JFrame {
     }
 
     private void loadSlide(int index) {
-        // CRITICAL: Stop previous animations before loading new slide
-        stopActiveAnimations();
+        stopActiveAnimations(); 
         
         mainText.setText("");
         subText.setText("");
@@ -158,33 +158,40 @@ public class WrappedWindow extends JFrame {
 
         switch (index) {
             case 0:
-                mainText.setText("2026 WRAPPED");
-                extraText.setText("Click to start");
+                mainText.animateTypewriter("2026 WRAPPED"); 
+                extraText.setText("Click to start"); 
                 revealStage = 1; 
                 break;
+                
             case 1:
-                mainText.setText("Activity Summary");
+                mainText.animateTypewriter("Activity Summary");
                 break;
+                
             case 2:
-                mainText.setText("Most Used Key");
+                mainText.animateTypewriter("Most Used Key");
                 break;
+                
             case 3:
-                mainText.setText("Top 5 Keys"); 
+                mainText.animateTypewriter("Top 5 Keys"); 
                 break;
+                
             case 4:
-                mainText.setText("Your Archetype");
+                mainText.animateTypewriter("Your Archetype");
                 break;
+                
             case 5:
-                mainText.setText("See you in 2027!");
-                extraText.setText("Click to close");
+                mainText.animateTypewriter("See you in 2027!"); 
+                
+                extraText.setText("Click to close"); 
+                
                 isFinished = true;
                 break;
+                
             default: dispose();
         }
     }
 
     private void animateReveal() {
-        // CRITICAL: Stop animations here too, just in case
         stopActiveAnimations();
         
         switch (currentSlideIndex) {
@@ -197,10 +204,9 @@ public class WrappedWindow extends JFrame {
             case 2: // Top Key
                 mainText.setFont(new Font("Arial", Font.BOLD, 140));
                 mainText.setForeground(new Color(255, 80, 80)); 
-                mainText.setText(data.topKeyName); // <--- This won't get overwritten now
+                mainText.setText(data.topKeyName);
                 
                 animateCountUp(subText, data.topKeyCount, " presses");
-                
                 mainPanel.setTheme(ParticlePanel.THEME_FIRE);
                 break;
                 
@@ -229,44 +235,38 @@ public class WrappedWindow extends JFrame {
 
             case 4: // Archetype
                 String type = data.archetype;
-                mainText.setText(type.toUpperCase());
-                subText.setText(data.archetypeDescription);
-                
-                mainPanel.spawnConfetti(); // Boom
+                mainPanel.spawnConfetti();
 
                 if (type.contains("Gamer")) {
                     mainText.setFont(new Font("Impact", Font.BOLD, 100));
                     mainText.setForeground(new Color(255, 50, 50)); 
                     mainPanel.setTheme(ParticlePanel.THEME_GAMER);
-
                     currentImage1 = loadImage("src/resources/gamer_3.png"); 
                     currentImage2 = loadImage("src/resources/gamer_2.png"); 
-                    
                 } else if (type.contains("Developer")) {
                     mainText.setFont(new Font("Consolas", Font.BOLD, 80));
-                    mainText.setForeground(Color.CYAN);
+                    mainText.setForeground(Color.GREEN);
                     mainPanel.setTheme(ParticlePanel.THEME_MATRIX);
-                    
                     currentImage1 = loadImage("dev_1.png"); 
                     currentImage2 = loadImage("dev_2.png"); 
-                    
                 } else {
                     mainText.setFont(new Font("Serif", Font.BOLD, 90));
                     mainText.setForeground(Color.ORANGE);
                     mainPanel.setTheme(ParticlePanel.THEME_GOLD);
                 }
+                
+                mainText.setText(type.toUpperCase());
+                subText.setText(data.archetypeDescription);
                 break;
         }
     }
-    
+        
     private BufferedImage loadImage(String path) {
         try { return ImageIO.read(new File(path)); } catch (Exception e) { return null; }
     }
 
     private void animateCountUp(JLabel label, long target, String suffix) {
-        // Stop any old timer first
         stopActiveAnimations();
-
         activeCountUpTimer = new Timer(20, null);
         long start = System.currentTimeMillis();
         
@@ -282,9 +282,5 @@ public class WrappedWindow extends JFrame {
             }
         });
         activeCountUpTimer.start();
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new WrappedWindow(null));
     }
 }

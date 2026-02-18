@@ -6,7 +6,6 @@ public class CustomKeyManager {
     public static List<CustomKey> customKeys = new ArrayList<>();
     private static int nextPseudoCode = 10000; 
 
-    // Called by ConfigManager after loading JSON to ensure IDs don't conflict
     public static void recalculateNextId() {
         int max = 10000;
         for (CustomKey ck : customKeys) {
@@ -18,13 +17,13 @@ public class CustomKeyManager {
     public static CustomKey add(String name, List<Integer> codes) {
         CustomKey ck = new CustomKey(name, nextPseudoCode++, codes);
         customKeys.add(ck);
-        ConfigManager.save(); // Save to JSON
+        ConfigManager.save();
         return ck;
     }
 
     public static void remove(CustomKey key) {
         customKeys.remove(key);
-        ConfigManager.save(); // Save to JSON
+        ConfigManager.save();
     }
 
     public static CustomKey getByPseudoCode(int code) {
@@ -39,7 +38,6 @@ public class CustomKeyManager {
         return null;
     }
 
-    // --- VALIDATION ---
     public static boolean isNameTaken(String name) {
         if (name == null) return false;
         for (CustomKey ck : customKeys) {

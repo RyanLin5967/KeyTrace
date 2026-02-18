@@ -20,7 +20,7 @@ public class AnimatedBar extends JPanel {
         setOpaque(false);
         setPreferredSize(new Dimension(600, 60)); // Fixed height for each row
         
-        // Calculate relative width (so the top key is full width, others are smaller)
+        // Calculate relative width
         final float targetWidthPercentage = (float) value / (float) maxValue;
 
         timer = new Timer(15, new ActionListener() {
@@ -36,7 +36,6 @@ public class AnimatedBar extends JPanel {
                     progress = targetWidthPercentage;
                     timer.stop();
                 } else {
-                    // Ease-out
                     progress = targetWidthPercentage * (1 - (float)Math.pow(1 - p, 3));
                 }
                 repaint();
@@ -66,7 +65,7 @@ public class AnimatedBar extends JPanel {
         g2.drawString(label, 0, y + 28);
 
         // Draw Bar Background (Dark Line)
-        int startX = 100; // Space for label
+        int startX = 180; // Space for label
         int maxBarW = w - startX - 100; // Space for value
         
         g2.setColor(new Color(50, 50, 60));
@@ -79,7 +78,6 @@ public class AnimatedBar extends JPanel {
             g2.fillRoundRect(startX, y, currentBarW, barH, 10, 10);
         }
 
-        // Draw Value (Right)
         // Only show value if bar has started growing
         if (progress > 0.01f) {
             g2.setColor(Color.LIGHT_GRAY);

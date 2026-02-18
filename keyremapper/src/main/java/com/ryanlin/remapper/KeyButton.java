@@ -13,21 +13,18 @@ public class KeyButton extends JButton {
         super(text);
         this.keyCode = keyCode;
         
-        // 1. Initialize empty to register with ToolTipManager
         this.setToolTipText(""); 
 
         this.setPreferredSize(new java.awt.Dimension(width, height));
         this.setMargin(new java.awt.Insets(0, 0, 0, 0));
         this.setFocusable(false);
         
-        // Default styling
         this.setBackground(UIManager.getColor("Button.background"));
         this.setOpaque(true);
         this.setContentAreaFilled(true);
         this.setBorderPainted(true);
     }
 
-    // 2. The Dynamic Text Logic
    @Override
     public String getToolTipText(MouseEvent event) {
         if (!VirtualKeyboard.isHeatmapOn) return null;
@@ -35,7 +32,6 @@ public class KeyButton extends JButton {
         long count;
         String label;
 
-        // Fix: Only use "Shift+" tooltip if this key is actually in the shiftMap (e.g. 1 -> !)
         if (VirtualKeyboard.isShifted && VirtualKeyboard.isKeyShifted(this.keyCode)) {
             String baseName = VirtualKeyboard.getName(this.keyCode);
             String comboKey = "Shift+" + baseName;
@@ -53,8 +49,8 @@ public class KeyButton extends JButton {
     }
 
     public void resetStyle() {
-        isSelectedSource = false; // Unlock
-        isSelectedDest = false;   // Unlock
+        isSelectedSource = false;
+        isSelectedDest = false;
         
         this.setBackground(UIManager.getColor("Button.background"));
         this.setForeground(null);
@@ -65,9 +61,8 @@ public class KeyButton extends JButton {
         this.repaint();
     }
     
-    // ... keep your setSelectedSource / setSelectedDest / resetColor methods ...
     public void setSelectedSource() {
-        isSelectedSource = true; // Lock
+        isSelectedSource = true;
         this.setBackground(new Color(255, 200, 200)); 
     }
     

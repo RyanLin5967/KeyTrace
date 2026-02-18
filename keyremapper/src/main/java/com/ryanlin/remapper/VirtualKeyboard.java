@@ -2,8 +2,11 @@ package com.ryanlin.remapper;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -11,12 +14,11 @@ import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -32,8 +34,6 @@ import javax.swing.UIManager;
 public class VirtualKeyboard extends JPanel {
     private ActionListener keyListener;
     private static final HashMap<Integer, String> codeToNameMap = new HashMap<>();
-    private static ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
-
     private Timer refreshTimer;
     private final int UNIT_WIDTH = 45;
     private final int UNIT_HEIGHT = 45;
@@ -42,36 +42,49 @@ public class VirtualKeyboard extends JPanel {
     private JPanel customKeysPanel;
     private RemapperGUI parentGUI;
 
-    // --- STATE FLAGS ---
     public static boolean isHeatmapOn = false;
     public static boolean isShifted = false; // Tracks if Shift is toggled
     
-    // --- SHIFT MAPPING ---
+    // shift mapping
     private static final Map<Integer, String> shiftMap = new HashMap<>();
     static {
-        // Map Base ID -> Shifted Symbol
-        shiftMap.put(192, "~"); shiftMap.put(49, "!"); shiftMap.put(50, "@"); 
-        shiftMap.put(51, "#"); shiftMap.put(52, "$"); shiftMap.put(53, "%"); 
-        shiftMap.put(54, "^"); shiftMap.put(55, "&"); shiftMap.put(56, "*"); 
-        shiftMap.put(57, "("); shiftMap.put(48, ")"); shiftMap.put(189, "_"); 
+        // Map key code -> Shifted Symbol
+        shiftMap.put(192, "~"); 
+        shiftMap.put(49, "!"); 
+        shiftMap.put(50, "@"); 
+        shiftMap.put(51, "#"); 
+        shiftMap.put(52, "$"); 
+        shiftMap.put(53, "%"); 
+        shiftMap.put(54, "^"); 
+        shiftMap.put(55, "&"); 
+        shiftMap.put(56, "*"); 
+        shiftMap.put(57, "("); 
+        shiftMap.put(48, ")"); 
+        shiftMap.put(189, "_"); 
         shiftMap.put(187, "+"); 
         
-        shiftMap.put(219, "{"); shiftMap.put(221, "}"); shiftMap.put(220, "|");
-        shiftMap.put(186, ":"); shiftMap.put(222, "\"");
-        shiftMap.put(188, "<"); shiftMap.put(190, ">"); shiftMap.put(191, "?");
+        shiftMap.put(219, "{"); 
+        shiftMap.put(221, "}"); 
+        shiftMap.put(220, "|");
+        shiftMap.put(186, ":"); 
+        shiftMap.put(222, "\"");
+        shiftMap.put(188, "<"); 
+        shiftMap.put(190, ">"); 
+        shiftMap.put(191, "?");
     }
 
     public VirtualKeyboard(RemapperGUI gui) {
         this.keyListener = gui;
         this.parentGUI = gui;
         
-        // Timer updates UI every 1 second
+        // Timer updates heatmap every second
         refreshTimer = new Timer(1000, e -> {
             if (isHeatmapOn) {
                 repaintHeatmap();
             }
         });
-        
+        UIManager.put("Button.font", new Font("Arial", Font.PLAIN, 13));
+
         customKeysPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         customKeysPanel.setBorder(BorderFactory.createTitledBorder("Custom Keys"));
         customKeysPanel.setPreferredSize(new Dimension(800, 150)); 
@@ -115,26 +128,20 @@ public class VirtualKeyboard extends JPanel {
 
     public void repaintHeatmap() {
         long maxCount = HeatmapManager.getGlobalMax(); 
-        java.util.List<KeyButton> buttons = getAllButtons();
+        List<KeyButton> buttons = getAllButtons();
 
-        // 1. GET FLATLAF'S DEFAULT COLOR DYNAMICALLY
-        // This ensures it works for both Light and Dark themes automatically.
         Color baseColor = UIManager.getColor("Button.background");
-        if (baseColor == null) baseColor = Color.GRAY; // Fallback just in case
-
-        // 2. DEFINE YOUR TARGET "HOT" COLOR
-        Color hotColor = new Color(255, 40, 40); // Very Bright Red
+        if (baseColor == null) baseColor = Color.GRAY; 
+        Color hotColor = new Color(255, 40, 40); 
 
         for (KeyButton btn : buttons) {
             if (btn.isLocked()) continue;
 
-            // If heatmap is off, reset everything to default
             if (!isHeatmapOn) {
                 btn.resetStyle(); 
                 continue;
             }
             
-            // Prepare the button for custom coloring
             btn.setToolTipText(""); 
             btn.setOpaque(true);
             btn.setBorderPainted(true); 
@@ -179,12 +186,12 @@ public class VirtualKeyboard extends JPanel {
         return list;
     }   
 
-    private void collectButtons(java.awt.Container container, java.util.List<KeyButton> list) {
-        for (java.awt.Component comp : container.getComponents()) {
+    private void collectButtons(Container container, List<KeyButton> list) {
+        for (Component comp : container.getComponents()) {
             if (comp instanceof KeyButton) {
                 list.add((KeyButton) comp);
-            } else if (comp instanceof java.awt.Container) {
-                collectButtons((java.awt.Container) comp, list);
+            } else if (comp instanceof Container) {
+                collectButtons((Container) comp, list);
             }
         }
     }
@@ -194,16 +201,28 @@ public class VirtualKeyboard extends JPanel {
             CustomKey ck = CustomKeyManager.getByPseudoCode(code);
             return (ck != null) ? ck.getName() : "Custom(" + code + ")";
         }
-        return codeToNameMap.getOrDefault(code, "Key " + code);
+        if (codeToNameMap.containsKey(code)) {
+            return codeToNameMap.get(code);
+        }
+        
+        return "Key + " + code;
     }
 
     public void rebuildCustomKeys() {
         if (customKeysPanel == null) return;
         customKeysPanel.removeAll();
         List<CustomKey> keys = CustomKeyManager.customKeys;
+        Font font = UIManager.getFont("Button.font");
+        if (font == null) font = new Font("Arial", Font.PLAIN, 13);
+        FontMetrics fm = this.getFontMetrics(font);
         for (CustomKey ck : keys) {
             if (ck.isHidden()) continue;
-            KeyButton btn = new KeyButton(ck.getName(), ck.getPseudoCode(), UNIT_WIDTH + 20, UNIT_HEIGHT);
+            String name = ck.getName();
+            int textWidth = fm.stringWidth(name);
+            int padding = 20;
+            int minWidth = UNIT_WIDTH + 20;
+            int finalWidth = Math.max(minWidth, textWidth + padding);
+            KeyButton btn = new KeyButton(ck.getName(), ck.getPseudoCode(), finalWidth, UNIT_HEIGHT);
             if (isHeatmapOn) btn.setOpaque(true); else btn.setBackground(UIManager.getColor("Button.background"));
             btn.addActionListener(keyListener);
             btn.addMouseListener(new MouseAdapter() {
@@ -233,54 +252,84 @@ public class VirtualKeyboard extends JPanel {
     }
 
     public void render100Percent() {
-        this.removeAll(); setLayout(new BorderLayout()); 
+        this.removeAll(); 
+        setLayout(new BorderLayout()); 
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         JPanel kb = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        JPanel left = new JPanel(); left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS)); 
-        left.add(buildFunctionRow()); left.add(buildMainAlphaBlock(110, 90, 115));
-        JPanel right = new JPanel(); right.setLayout(new BoxLayout(right, BoxLayout.X_AXIS));
-        JPanel navCol = new JPanel(); navCol.setLayout(new BoxLayout(navCol, BoxLayout.Y_AXIS));
-        navCol.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); navCol.add(buildNavCluster6Key());
-        navCol.add(Box.createVerticalStrut(UNIT_HEIGHT)); navCol.add(buildArrowCluster());
-        JPanel numCol = new JPanel(); numCol.setLayout(new BoxLayout(numCol, BoxLayout.Y_AXIS));
-        numCol.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); numCol.add(buildNumpad()); 
-        right.add(navCol); right.add(Box.createHorizontalStrut(10)); right.add(numCol);
-        kb.add(left); kb.add(right);
+
+        JPanel left = new JPanel(); 
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS)); 
+        left.add(buildFunctionRow()); 
+        left.add(buildMainAlphaBlock(110, 90, 115));
+
+        JPanel right = new JPanel(); 
+        right.setLayout(new BoxLayout(right, BoxLayout.X_AXIS));
+
+        JPanel navCol = new JPanel(); 
+        navCol.setLayout(new BoxLayout(navCol, BoxLayout.Y_AXIS));
+        navCol.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); 
+        navCol.add(buildNavCluster6Key());
+        navCol.add(Box.createVerticalStrut(UNIT_HEIGHT)); 
+        navCol.add(buildArrowCluster());
+
+        JPanel numCol = new JPanel(); 
+        numCol.setLayout(new BoxLayout(numCol, BoxLayout.Y_AXIS));
+        numCol.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); 
+        numCol.add(buildNumpad()); 
+        right.add(navCol); 
+        right.add(Box.createHorizontalStrut(10)); 
+        right.add(numCol);
+        kb.add(left); 
+        kb.add(right);
         mainBoard.add(kb);
         add(mainBoard, BorderLayout.NORTH); add(customKeysPanel, BorderLayout.CENTER); 
         refresh();
     }
     
     public void render75Percent() {
-        this.removeAll(); setLayout(new BorderLayout());
+        this.removeAll(); 
+        setLayout(new BorderLayout());
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         JPanel internal = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        JPanel left = new JPanel(); left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.add(buildFunctionRow()); left.add(buildCompactAlphaBlock()); 
-        JPanel right = new JPanel(); right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
-        right.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); right.add(buildCompactSideColumn(true)); 
-        internal.add(left); internal.add(right);
+
+        JPanel left = new JPanel(); 
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        left.add(buildFunctionRow()); 
+        left.add(buildCompactAlphaBlock()); 
+
+        JPanel right = new JPanel(); 
+        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
+        right.add(Box.createVerticalStrut(UNIT_HEIGHT + 2)); 
+        right.add(buildCompactSideColumn(true)); 
+        internal.add(left); 
+        internal.add(right);
         mainBoard.add(internal);
-        add(mainBoard, BorderLayout.CENTER); add(customKeysPanel, BorderLayout.SOUTH);
+        add(mainBoard, BorderLayout.CENTER); 
+        add(customKeysPanel, BorderLayout.SOUTH);
         refresh();
     }
 
     public void render65Percent() {
-        this.removeAll(); setLayout(new BorderLayout());
+        this.removeAll(); 
+        setLayout(new BorderLayout());
         JPanel mainBoard = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
         JPanel internal = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        JPanel left = new JPanel(); left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+
+        JPanel left = new JPanel(); 
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.add(buildCompactAlphaBlock()); 
-        JPanel right = new JPanel(); right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
+
+        JPanel right = new JPanel(); 
+        right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
         right.add(buildCompactSideColumn(false));
-        internal.add(left); internal.add(right);
+        internal.add(left); 
+        internal.add(right);
         mainBoard.add(internal);
-        add(mainBoard, BorderLayout.CENTER); add(customKeysPanel, BorderLayout.SOUTH);
+        add(mainBoard, BorderLayout.CENTER); 
+        add(customKeysPanel, BorderLayout.SOUTH);
         refresh();
     }
-
-    // --- BUILDER METHODS ---
-
+    //build methods
     private JPanel buildFunctionRow() {
         JPanel row = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -289,11 +338,18 @@ public class VirtualKeyboard extends JPanel {
         int[] codes = {27,112,113,114,115,116,117,118,119,120,121,122,123};
         addFixedBtn(row, labels[0], codes[0], gbc);
         addFixedGap(row, gbc);
-        for(int i=1; i<=4; i++) addFixedBtn(row, labels[i], codes[i], gbc);
+        for(int i=1; i<=4; i++) {
+            addFixedBtn(row, labels[i], codes[i], gbc);
+        }
         addFixedGap(row, gbc);
-        for(int i=5; i<=8; i++) addFixedBtn(row, labels[i], codes[i], gbc);
+        for(int i=5; i<=8; i++) {
+            addFixedBtn(row, labels[i], codes[i], gbc);
+        }
         addFixedGap(row, gbc);
-        for(int i=9; i<=12; i++) addFixedBtn(row, labels[i], codes[i], gbc);
+        for(int i=9; i<=12; i++) {
+            addFixedBtn(row, labels[i], codes[i], gbc);
+
+        }
         return row;
     }
 
@@ -329,7 +385,8 @@ public class VirtualKeyboard extends JPanel {
         block.add(createRow(new String[]{"Shift","Z","X","C","V","B","N","M",",",".","/","Shift","▲"}, new int[]{16,90,88,67,86,66,78,77,188,190,191,16,38}, new int[]{115,50,50,50,50,50,50,50,50,50,50,85,50}));
         JPanel bottomRow = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0; gbc.insets = new Insets(1, 1, 1, 1);
+        gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0;
+        gbc.insets = new Insets(1, 1, 1, 1);
         String[] leftLabels = {"Ctrl","Win","Alt","Space","Alt","Fn"};
         int[] leftCodes = {17,524,18,32,18,0};
         int[] leftWidths = {75,75,75,275,75,75}; 
@@ -357,7 +414,8 @@ public class VirtualKeyboard extends JPanel {
     private JPanel buildCompactSideColumn(boolean is75Percent) {
         JPanel col = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.insets = new Insets(1, 0, 1, 1); 
+        gbc.gridx = 0; gbc.fill = GridBagConstraints.HORIZONTAL; 
+        gbc.insets = new Insets(1, 0, 1, 1); 
         String[] labels; int[] codes;
         if (is75Percent) {
              labels = new String[]{"Home", "PgUp", "PgDn", "End", "►"};
@@ -378,7 +436,6 @@ public class VirtualKeyboard extends JPanel {
 
     private JPanel buildNumpad() {
         JPanel pad = new JPanel(new GridBagLayout());
-        // Fix: Use Numpad names so they don't collide with Top Row
         addGBCButton(pad, "Num", 144, 0, 0, 1, 1);
         addGBCButton(pad, "/", 111, 1, 0, 1, 1);
         addGBCButton(pad, "*", 106, 2, 0, 1, 1);
@@ -397,18 +454,29 @@ public class VirtualKeyboard extends JPanel {
         addGBCButton(pad, "0", 96, 0, 4, 2, 1); 
         addGBCButton(pad, ".", 110, 2, 4, 1, 1);
         
-        // FIX: RENAME NUMPAD KEYS INTERNALLY to avoid collision with top row "1"
-        codeToNameMap.put(97, "Num 1"); codeToNameMap.put(98, "Num 2"); codeToNameMap.put(99, "Num 3");
-        codeToNameMap.put(100, "Num 4"); codeToNameMap.put(101, "Num 5"); codeToNameMap.put(102, "Num 6");
-        codeToNameMap.put(103, "Num 7"); codeToNameMap.put(104, "Num 8"); codeToNameMap.put(105, "Num 9");
+        codeToNameMap.put(97, "Num 1"); 
+        codeToNameMap.put(98, "Num 2"); 
+        codeToNameMap.put(99, "Num 3");
+        codeToNameMap.put(100, "Num 4"); 
+        codeToNameMap.put(101, "Num 5"); 
+        codeToNameMap.put(102, "Num 6");
+        codeToNameMap.put(103, "Num 7"); 
+        codeToNameMap.put(104, "Num 8"); 
+        codeToNameMap.put(105, "Num 9");
         codeToNameMap.put(96, "Num 0");
         return pad;
     }
 
     private void addGBCButton(JPanel p, String text, int code, int x, int y, int w, int h) {
         GridBagConstraints c = new GridBagConstraints();
-        c.gridx = x; c.gridy = y; c.gridwidth = w; c.gridheight = h;
-        c.fill = GridBagConstraints.BOTH; c.weightx = 1.0; c.weighty = 1.0; c.insets = new Insets(1,1,1,1);
+        c.gridx = x; 
+        c.gridy = y; 
+        c.gridwidth = w; 
+        c.gridheight = h;
+        c.fill = GridBagConstraints.BOTH; 
+        c.weightx = 1.0; 
+        c.weighty = 1.0; 
+        c.insets = new Insets(1,1,1,1);
         codeToNameMap.put(code, text);
         int pxWidth = w * UNIT_WIDTH; 
         int pxHeight = h * UNIT_HEIGHT;
@@ -428,13 +496,17 @@ public class VirtualKeyboard extends JPanel {
         JPanel cluster = new JPanel(new GridLayout(2, 1, 0, 0));
         JPanel upRow = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH; gbc.weightx = 1.0; gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH; 
+        gbc.weightx = 1.0; 
+        gbc.weighty = 1.0;
         upRow.add(Box.createHorizontalGlue(), gbc);
         KeyButton upBtn = new KeyButton("▲", 38, UNIT_WIDTH, UNIT_HEIGHT);
         upBtn.addActionListener(keyListener);
         codeToNameMap.put(38, "▲");
-        gbc.weightx = 0; upRow.add(upBtn, gbc);   
-        gbc.weightx = 1.0; upRow.add(Box.createHorizontalGlue(), gbc);
+        gbc.weightx = 0; 
+        upRow.add(upBtn, gbc);   
+        gbc.weightx = 1.0; 
+        upRow.add(Box.createHorizontalGlue(), gbc);
         cluster.add(upRow);
         cluster.add(createRow(new String[]{"◄","▼","►"}, new int[]{37,40,39}, null));
         return cluster;
@@ -443,7 +515,9 @@ public class VirtualKeyboard extends JPanel {
     private JPanel createRow(String[] labels, int[] codes, int[] widths) {
         JPanel row = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0; gbc.insets = new Insets(1, 1, 1, 1);
+        gbc.fill = GridBagConstraints.BOTH; 
+        gbc.weighty = 1.0; 
+        gbc.insets = new Insets(1, 1, 1, 1);
         for (int i = 0; i < labels.length; i++) {
             int code = codes[i];
             String label = labels[i];
@@ -459,7 +533,6 @@ public class VirtualKeyboard extends JPanel {
     } 
 
     private void refresh() {
-        // Appended: Update labels based on shift state
         updateKeyLabels();
         
         if (isHeatmapOn) {

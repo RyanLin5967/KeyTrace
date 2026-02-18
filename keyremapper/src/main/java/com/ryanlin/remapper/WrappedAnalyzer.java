@@ -22,7 +22,7 @@ public class WrappedAnalyzer {
             allStats.merge(entry.getKey(), entry.getValue(), Long::sum);
         }
 
-        // 2. Find Top Key
+        // 2. Find top key
         Map.Entry<String, Long> topKey = allStats.entrySet().stream()
             .max(Map.Entry.comparingByValue())
             .orElse(new AbstractMap.SimpleEntry<>("None", 0L));
@@ -30,16 +30,16 @@ public class WrappedAnalyzer {
         data.topKeyName = topKey.getKey();
         data.topKeyCount = topKey.getValue();
 
-        // 3. Extract Specific Stats
+        // 3. get specific stats
         data.backspaceCount = allStats.getOrDefault("Backspace", 0L);
         data.enterCount = allStats.getOrDefault("Enter", 0L);
         data.copyCount = allStats.getOrDefault("Ctrl+C", 0L) + allStats.getOrDefault("Ctrl+c", 0L); // Covers case variations
         data.pasteCount = allStats.getOrDefault("Ctrl+V", 0L) + allStats.getOrDefault("Ctrl+v", 0L);
 
-        // 4. Determine Archetype
+        // 4. Determine archetype
         determineArchetype(data, allStats);
 
-        // 5. Get Top 5
+        // 5. Get top 5
         data.top5Keys = allStats.entrySet().stream()
             .sorted((k1, k2) -> k2.getValue().compareTo(k1.getValue())) 
             .limit(5)
@@ -64,26 +64,26 @@ public class WrappedAnalyzer {
         String type = "The Generalist";
         String desc = "Balanced. Efficient. You use the whole keyboard.";
 
-        if (wasdCount > maxScore) {
-            maxScore = wasdCount;
+        if (wasdCount/4 > maxScore) {
+            maxScore = wasdCount/4;
             type = "The Gamer";
             desc = "You spent more time moving in games than typing text.";
         }
         
-        if ((codeCount * 5) > maxScore) { 
-            maxScore = codeCount * 5;
+        if ((codeCount * 20) > maxScore) { 
+            maxScore = codeCount * 20;
             type = "The Developer";
             desc = "Your keyboard usage aligns with writing and debugging code.";
         }
         
         if (editCount > maxScore) {
             maxScore = editCount;
-            type = "The Editor";
+            type = "The Editor"; 
             desc = "You spent more time moving in applications than typing text.";
         }
         
-        if ((copyPasteCount * 100) > maxScore) {
-             maxScore = copyPasteCount * 100;
+        if ((copyPasteCount * 10) > maxScore) {
+             maxScore = copyPasteCount * 10;
              type = "The Vibe Coder";
              desc = "Ctrl+C, Ctrl+V. Why write code when it already exists?";
         }

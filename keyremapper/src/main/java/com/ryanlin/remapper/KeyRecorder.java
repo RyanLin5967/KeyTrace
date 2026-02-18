@@ -26,29 +26,30 @@ public class KeyRecorder extends JDialog {
 
         JPanel btnPanel = new JPanel();
         JButton clearBtn = new JButton("Clear");
+        clearBtn.setFocusable(false);
         JButton cancelBtn = new JButton("Cancel");
+        cancelBtn.setFocusable(false);
         JButton doneBtn = new JButton("Done");
-        
-        btnPanel.add(clearBtn); btnPanel.add(cancelBtn); btnPanel.add(doneBtn);
+        doneBtn.setFocusable(false);
+        btnPanel.add(clearBtn); 
+        btnPanel.add(cancelBtn); 
+        btnPanel.add(doneBtn);
         add(btnPanel, BorderLayout.SOUTH);
   
         Main.recordingBuffer.clear();
         Main.isRecording = true;
 
-        // --- NEW FIX: HANDLE TABBING OUT ---
+        // In case user tabs out
         addWindowFocusListener(new WindowAdapter() {
             @Override
             public void windowLostFocus(WindowEvent e) {
-                // If user tabs out, TURN OFF recording so keys work in other apps
                 Main.isRecording = false;
                 statusLabel.setText("Paused (Click window to resume)");
             }
 
             @Override
             public void windowGainedFocus(WindowEvent e) { 
-                // When user clicks back, TURN ON recording
                 Main.isRecording = true;
-                // Restore the text
                 if (latchedKeys.isEmpty()) {  
                     statusLabel.setText("Press keys...");
                 } else {
@@ -56,15 +57,12 @@ public class KeyRecorder extends JDialog {
                 }
             }
         });
-        // -----------------------------------
 
         pollingTimer = new javax.swing.Timer(30, e -> {
-            // Logic untouched as requested
             Set<Integer> currentPresses = new HashSet<>(Main.recordingBuffer);
 
             if (currentPresses.isEmpty()) {
                 allKeysReleased = true;
-                // Only update text if we have focus and haven't recorded anything
                 if (latchedKeys.isEmpty() && Main.isRecording) statusLabel.setText("Press keys...");
             } else {
                 if (allKeysReleased) {
@@ -96,13 +94,19 @@ public class KeyRecorder extends JDialog {
         pollingTimer.start();
 
         clearBtn.addActionListener(e -> { 
-            Main.recordingBuffer.clear(); latchedKeys.clear(); 
-            allKeysReleased = true; statusLabel.setText("Cleared."); 
+            Main.recordingBuffer.clear(); 
+            latchedKeys.clear(); 
+            allKeysReleased = true; 
+            statusLabel.setText("Cleared."); 
         });
         cancelBtn.addActionListener(e -> closeDialog(false));
         doneBtn.addActionListener(e -> closeDialog(true));
         
-        addWindowListener(new WindowAdapter() { public void windowClosing(WindowEvent e) { closeDialog(false); }});
+        addWindowListener(new WindowAdapter() { 
+            public void windowClosing(WindowEvent e) { 
+                closeDialog(false); 
+            }
+        });
     }
 
     private void closeDialog(boolean save) {
