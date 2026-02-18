@@ -1,1 +1,0 @@
-Type ".\r" in the terminal to run the program
