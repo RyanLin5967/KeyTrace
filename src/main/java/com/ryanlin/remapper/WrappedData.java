@@ -11,12 +11,10 @@ public class WrappedData {
     public String archetype = "The Generalist";
     public String archetypeDescription = "You use your keyboard like a well-balanced instrument.";
     
-    // Fun Stats
     public long backspaceCount = 0;
     public long enterCount = 0;
     public long copyCount = 0;
     public long pasteCount = 0;
     
-    // Top 5 List
     public List<Map.Entry<String, Long>> top5Keys = new ArrayList<>();
 }

@@ -21,8 +21,7 @@ public class AnimatedBar extends JPanel {
         setPreferredSize(new Dimension(600, 60)); // Fixed height for each row
         
         // Calculate relative width
-        final float targetWidthPercentage = (float) value / (float) maxValue;
-
+        final float targetWidthPercentage = (maxValue == 0) ? 0 : (float) value / (float) maxValue;
         timer = new Timer(15, new ActionListener() {
             long startTime = -1;
             @Override
@@ -64,14 +63,12 @@ public class AnimatedBar extends JPanel {
         g2.setFont(new Font("Arial", Font.BOLD, 20));
         g2.drawString(label, 0, y + 28);
 
-        // Draw Bar Background (Dark Line)
         int startX = 180; // Space for label
         int maxBarW = w - startX - 100; // Space for value
         
         g2.setColor(new Color(50, 50, 60));
         g2.fillRoundRect(startX, y, maxBarW, barH, 10, 10);
 
-        // Draw Animated Bar
         int currentBarW = (int) (maxBarW * progress);
         if (currentBarW > 0) {
             g2.setColor(barColor);

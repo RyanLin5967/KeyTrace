@@ -13,5 +13,5 @@ public class AppConfig {
     public List<CustomKey> cusKeys = new ArrayList<>();
     
     public ConcurrentHashMap<Integer, Long> keyHeatmap = new ConcurrentHashMap<>(); 
-    public Map<String, Long> comboHeatmap = new HashMap<>();
+    public ConcurrentHashMap<String, Long> comboHeatmap = new ConcurrentHashMap<>();
 }

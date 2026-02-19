@@ -247,8 +247,6 @@ public class WrappedWindow extends JFrame {
                     mainText.setFont(new Font("Consolas", Font.BOLD, 80));
                     mainText.setForeground(Color.GREEN);
                     mainPanel.setTheme(ParticlePanel.THEME_MATRIX);
-                    currentImage1 = loadImage("dev_1.png"); 
-                    currentImage2 = loadImage("dev_2.png"); 
                 } else {
                     mainText.setFont(new Font("Serif", Font.BOLD, 90));
                     mainText.setForeground(Color.ORANGE);

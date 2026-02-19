@@ -22,18 +22,20 @@ public class ParticlePanel extends JPanel {
     private Random random = new Random();
     
     private BufferedImage img1, img2;
+    private boolean initialized = false;
 
     public ParticlePanel() {
         super(new GridBagLayout());
         setBackground(Color.BLACK);
         setOpaque(true);
-        for (int i = 0; i < 150; i++) particles.add(new Particle());
+        for (int i = 0; i < 400; i++) particles.add(new Particle());
     }
-
+    
     public void setTheme(int theme) {
         this.currentTheme = theme;
-        int w = getWidth() > 0 ? getWidth() : 1920;
-        int h = getHeight() > 0 ? getHeight() : 1080;
+        int w = getWidth();
+        int h = getHeight();
+        if (w <= 0 || h <= 0) return;
         for (Particle p : particles) p.reset(w, h, theme);
     }
     
@@ -41,7 +43,19 @@ public class ParticlePanel extends JPanel {
         this.img1 = i1;
         this.img2 = i2;
     }
-    
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        super.setBounds(x, y, width, height);
+        
+        // Only randomize positions if we haven't done it yet and we have a real size
+        if (!initialized && width > 0 && height > 0) {
+            for (Particle p : particles) {
+                p.x = random.nextInt(width);
+                p.y = random.nextInt(height);
+            }
+            initialized = true; // Lock it so it never teleports again
+        }
+    }
     public void spawnConfetti() {
         int w = getWidth();
         int h = getHeight();
@@ -127,6 +141,13 @@ public class ParticlePanel extends JPanel {
                     vx = 0; vy = 15;
                     color = new Color(150, 150, 255);
                     size = 2; shape = 0; break;
+                case THEME_GOLD:
+                    vx = (random.nextFloat() - 0.5f) * 1.5f; 
+                    vy = (random.nextFloat() - 0.5f) * 1.5f;
+                    color = new Color(255, 215, 0); 
+                    size = random.nextInt(4) + 2; 
+                    shape = 1;
+                    break;
                 default:
                     vx = (random.nextFloat() - 0.5f); vy = (random.nextFloat() - 0.5f);
                     color = new Color(255,255,255);

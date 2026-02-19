@@ -6,20 +6,17 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashSet;
 
 public class RemapperGUI extends JFrame implements ActionListener {
     private DefaultTableModel model;
     private JTable table;
-    private JTextField enterKeyToMap = new JTextField(20);
-    private JTextField enterKeyToRemap = new JTextField(20);
-    
-    private JLabel chooseKey = new JLabel("choose the key to remap");
-    private JLabel chooseRemap = new JLabel("choose the key it'll remap to");
-    private JButton chooseKeyToRemap = new JButton("submit");
     private JButton createMapping = new JButton("Create Mapping");
 
     private VirtualKeyboard virtualKeyboard;
-    private int visualStep = 0; // 0: Idle, 1: Source Selected, 2: Destination Selected
+    private int visualStep = 0; // 0: Idle, 1: Source selected, 2: Destination selected
     private KeyButton sourceKeyBtn = null;
     private KeyButton destKeyBtn = null;
     private JButton confirmVisualBtn = new JButton("Confirm Mapping");
@@ -116,7 +113,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
 
         createMapping.addActionListener(e -> {
             createMapping.setBackground(Color.GRAY);
-            toggleInputFields(true);
             visualStep = 1; 
         });
         confirmVisualBtn.setFocusable(false);
@@ -299,13 +295,13 @@ public class RemapperGUI extends JFrame implements ActionListener {
                     String baseName = VirtualKeyboard.getName(keyCode);
                     String customName = "Shift+" + baseName;
                     
-                    java.util.List<Integer> combo = new java.util.ArrayList<>();
+                    List<Integer> combo = new ArrayList<>();
                     combo.add(16);
                     combo.add(keyCode);
 
                     CustomKey existing = null;
                     for (CustomKey ck : CustomKeyManager.customKeys) {
-                        if (ck.matches(new java.util.HashSet<>(combo))) {
+                        if (ck.matches(new HashSet<>(combo))) {
                             existing = ck;
                             break;                                                                                                                         
                         }                                  
@@ -355,15 +351,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
         virtualKeyboard.repaintHeatmap();
     }
 }
-
-    private void toggleInputFields(boolean visible) {
-        chooseKey.setVisible(visible);
-        enterKeyToMap.setVisible(visible);
-        chooseRemap.setVisible(visible);
-        enterKeyToRemap.setVisible(visible);
-        chooseKeyToRemap.setVisible(visible);
-    }
-
     private void loadExistingMappings() {
         for (Map.Entry<Integer, Integer> entry : Main.codeToCode.entrySet()) {
             int init = entry.getKey();

@@ -33,7 +33,8 @@ public class CustomKeyManager {
 
     public static CustomKey match(Set<Integer> pressedKeys) {
         for (CustomKey ck : customKeys) {
-            if (pressedKeys.containsAll(ck.getRawCodes())) return ck;
+            //if (pressedKeys.containsAll(ck.getRawCodes())) return ck;
+            if (ck.matches(pressedKeys)) return ck;
         }
         return null;
     }

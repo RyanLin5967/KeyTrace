@@ -46,35 +46,9 @@ public class HeatmapManager {
         }
         return max;
     }
-    public static String buildComboString(Set<Integer> heldModifiers, int currentKeyCode) {
-        List<String> parts = new ArrayList<>();
-        
-        if (heldModifiers.contains(17)) parts.add("Ctrl");
-        if (heldModifiers.contains(524)) parts.add("Win");
-        if (heldModifiers.contains(18)) parts.add("Alt");
-        if (heldModifiers.contains(16)) parts.add("Shift");
-        String keyName = VirtualKeyboard.getName(currentKeyCode);
-        parts.add(keyName);
-        
-        return String.join("+", parts);
-    }
     public static long getGlobalMax() {
         long maxKey = counter.values().stream().mapToLong(l -> l).max().orElse(1L);
         long maxCombo = comboCounts.values().stream().mapToLong(l -> l).max().orElse(1L);
         return Math.max(maxKey, maxCombo);
-    }
-    public static String getStandardComboString(Set<Integer> modifiers, int triggerKey) {
-        List<Integer> sortedMods = new ArrayList<>(modifiers);
-        Collections.sort(sortedMods);
-        
-        StringBuilder sb = new StringBuilder();
-        for (int mod : sortedMods) {
-            if (mod == 16) sb.append("Shift+");
-            else if (mod == 17) sb.append("Ctrl+");
-            else if (mod == 18) sb.append("Alt+");
-            else if (mod == 524) sb.append("Win+");
-        }
-        sb.append(VirtualKeyboard.getName(triggerKey));
-        return sb.toString();
     }
 }

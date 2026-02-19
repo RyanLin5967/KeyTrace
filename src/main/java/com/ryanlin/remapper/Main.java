@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import com.formdev.flatlaf.FlatDarkLaf; 
 
@@ -30,7 +33,7 @@ public class Main {
     private static LowLevelKeyboardProc keyboardHook;
     
     static Robot robot;
-    static HashMap<Integer, Integer> codeToCode = new HashMap<>();
+    static ConcurrentHashMap<Integer, Integer> codeToCode = new ConcurrentHashMap<>();
     
     private static Set<Integer> heldKeys = new HashSet<>();
 
@@ -47,14 +50,14 @@ public class Main {
     // modifiers
     private static final Map<Integer, Integer> windowsToJavaModifiers = new HashMap<>();
     static {
-        windowsToJavaModifiers.put(0xA0, KeyEvent.VK_SHIFT);   // VK_LSHIFT
-        windowsToJavaModifiers.put(0xA1, KeyEvent.VK_SHIFT);   // VK_RSHIFT
-        windowsToJavaModifiers.put(0xA2, KeyEvent.VK_CONTROL); // VK_LCONTROL
-        windowsToJavaModifiers.put(0xA3, KeyEvent.VK_CONTROL); // VK_RCONTROL
-        windowsToJavaModifiers.put(0xA4, KeyEvent.VK_ALT);     // VK_LMENU
-        windowsToJavaModifiers.put(0xA5, KeyEvent.VK_ALT);     // VK_RMENU
-        windowsToJavaModifiers.put(0x5B, KeyEvent.VK_WINDOWS); // VK_LWIN
-        windowsToJavaModifiers.put(0x5C, KeyEvent.VK_WINDOWS); // VK_RWIN
+        windowsToJavaModifiers.put(0xA0, KeyEvent.VK_SHIFT);
+        windowsToJavaModifiers.put(0xA1, KeyEvent.VK_SHIFT);
+        windowsToJavaModifiers.put(0xA2, KeyEvent.VK_CONTROL);
+        windowsToJavaModifiers.put(0xA3, KeyEvent.VK_CONTROL);
+        windowsToJavaModifiers.put(0xA4, KeyEvent.VK_ALT);
+        windowsToJavaModifiers.put(0xA5, KeyEvent.VK_ALT);
+        windowsToJavaModifiers.put(0x5B, KeyEvent.VK_WINDOWS);
+        windowsToJavaModifiers.put(0x5C, KeyEvent.VK_WINDOWS);
     }
 
     public interface Win32User32 extends Library {
@@ -364,14 +367,14 @@ public class Main {
         }
         return true; 
     }
-    public static String buildStandardCombo(java.util.Collection<Integer> keys, int triggerKey) {
-        java.util.List<Integer> sortedMods = new java.util.ArrayList<>();
+    public static String buildStandardCombo(Collection<Integer> keys, int triggerKey) {
+        List<Integer> sortedMods = new ArrayList<>();
         for (int k : keys) {
             if (k != triggerKey && (k == 16 || k == 17 || k == 18 || k == 524)) {
                 sortedMods.add(k);
             }
         }
-        java.util.Collections.sort(sortedMods);
+        Collections.sort(sortedMods);
 
         StringBuilder sb = new StringBuilder();
         for (int mod : sortedMods) {

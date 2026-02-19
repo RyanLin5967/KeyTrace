@@ -52,9 +52,9 @@ public class WrappedAnalyzer {
         long wasdCount = stats.getOrDefault("W", 0L) + stats.getOrDefault("A", 0L) + 
                          stats.getOrDefault("S", 0L) + stats.getOrDefault("D", 0L);
                          
-        long codeCount = stats.getOrDefault("{", 0L) + stats.getOrDefault("}", 0L) + 
-                         stats.getOrDefault(";", 0L) + stats.getOrDefault("Shift+9", 0L) + 
-                         stats.getOrDefault("Shift+0", 0L); 
+        long codeCount = stats.getOrDefault("Shift+[", 0L) + stats.getOrDefault("Shift+]", 0L) + 
+                 stats.getOrDefault(";", 0L) + stats.getOrDefault("Shift+9", 0L) + 
+                 stats.getOrDefault("Shift+0", 0L);
                          
         long editCount = stats.getOrDefault("Backspace", 0L) + stats.getOrDefault("Delete", 0L);
         

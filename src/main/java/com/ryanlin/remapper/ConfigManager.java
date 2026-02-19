@@ -2,9 +2,9 @@ package com.ryanlin.remapper;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 
 import java.util.concurrent.TimeUnit;
@@ -17,7 +17,7 @@ public class ConfigManager {
         try(FileReader fr = new FileReader("config.json")){
 
             AppConfig config = gson.fromJson(fr, AppConfig.class);
-            Main.codeToCode = new HashMap<>(config.simpleMappings);
+            Main.codeToCode = new ConcurrentHashMap<>(config.simpleMappings);
 
             CustomKeyManager.customKeys = config.cusKeys;
             CustomKeyManager.recalculateNextId();
@@ -30,7 +30,7 @@ public class ConfigManager {
         config.cusKeys = CustomKeyManager.customKeys;
         config.simpleMappings = Main.codeToCode;
         config.keyHeatmap = HeatmapManager.counter;
-        config.comboHeatmap = new HashMap<>(HeatmapManager.comboCounts);
+        config.comboHeatmap = new ConcurrentHashMap<>(HeatmapManager.comboCounts);
         try(FileWriter fw = new FileWriter("config.json")){
             gson.toJson(config, fw);
         } catch (IOException e){}
