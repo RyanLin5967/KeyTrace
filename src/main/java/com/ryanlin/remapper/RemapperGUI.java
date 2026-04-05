@@ -11,17 +11,21 @@ import java.util.List;
 import java.util.HashSet;
 
 public class RemapperGUI extends JFrame implements ActionListener {
+    
     private DefaultTableModel model;
     private JTable table;
     private JButton createMapping = new JButton("Create Mapping");
+    private final double SCALE = 1.8;
 
     private VirtualKeyboard virtualKeyboard;
     private int visualStep = 0; // 0: Idle, 1: Source selected, 2: Destination selected
     private KeyButton sourceKeyBtn = null;
     private KeyButton destKeyBtn = null;
     private JButton confirmVisualBtn = new JButton("Confirm Mapping");
-    
+    private JButton help = new JButton("Help");
+
     public RemapperGUI() {
+
         try {
             File iconFile = new File("src/resources/remappericon (3).png");
             if (iconFile.exists()) {
@@ -42,6 +46,12 @@ public class RemapperGUI extends JFrame implements ActionListener {
         setLayout(new BorderLayout());    
 
         UIManager.put("Button.font", new Font("Arial", Font.PLAIN, 13));
+        UIManager.put("ToolTip.font", new Font("Arial", Font.PLAIN, 13));
+        UIManager.put("OptionPane.messageFont", new Font("Arial", Font.PLAIN, 13));
+        UIManager.put("OptionPane.buttonFont", new Font("Arial", Font.PLAIN, 13));
+        UIManager.put("TextField.font", new Font("Arial", Font.PLAIN, 13)); 
+        UIManager.put("PopupMenu.font", new Font("Arial", Font.PLAIN, 13));
+        UIManager.put("MenuItem.font", new Font("Arial", Font.PLAIN, 13));
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBackground(null);
 
@@ -78,6 +88,7 @@ public class RemapperGUI extends JFrame implements ActionListener {
             }
         });
         layoutSelector.setFocusable(false);
+        help.setFocusable(false);
 
         confirmVisualBtn.setEnabled(false); 
 
@@ -107,8 +118,6 @@ public class RemapperGUI extends JFrame implements ActionListener {
         tableScroll.setPreferredSize(new Dimension(300, 0));
 
         JPanel northContainer = new JPanel(new GridLayout(1, 1));
-        northContainer.add(topPanel);
-
         addCustomKeyBtn.addActionListener(e -> recordNewCustomKey());
 
         createMapping.addActionListener(e -> {
@@ -131,13 +140,19 @@ public class RemapperGUI extends JFrame implements ActionListener {
                     finalSourceCode = sourceKeyBtn.getKeyCode();
                 }
 
-                int destCode = destKeyBtn.getKeyCode();
+                int finalDestCode;
+                Boolean isDestShifted = (Boolean) destKeyBtn.getClientProperty("isShiftedCombo");
+                if (isDestShifted != null && isDestShifted) {
+                    finalDestCode = (int) destKeyBtn.getClientProperty("shiftedPseudoCode");
+                } else {
+                    finalDestCode = destKeyBtn.getKeyCode();
+                }
 
                 if (Main.codeToCode.containsKey(finalSourceCode)) {
                     JOptionPane.showMessageDialog(this, "This mapping already exists. Remove it first.");
                     return; 
                 }
-                executeMapping(finalSourceCode, destCode);
+                executeMapping(finalSourceCode, finalDestCode);
                 resetVisualSelection();
             }
         });
@@ -193,6 +208,24 @@ public class RemapperGUI extends JFrame implements ActionListener {
             model.setRowCount(0);
             ConfigManager.save(); // Save to JSON
         });
+        help.setFont(new Font("Arial", Font.PLAIN, 13));
+        help.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "To create a mapping, press the 'Create mapping' button, then select two keys."
+                +"\n" + "To remove a single mapping, click a mapping on the table, then press the 'Remove selected mapping' button." +"\n"+
+                "To remove all mappings, press the 'Remove all mappings' button.\n"+
+                "To add a custom key/combination, press the 'Add Custom Key' button then click your custom key/combination.\n"+
+                "To remove a custom key, right click that custom key on the bottom row, then press the 'remove [name] and confirm.'\n"+
+                "To access the 'shifted' keys, press the 'Shift' Button and to reset it, press it again.\n"+
+                "To use different keyboard layouts, click the dropdown menu and select your prefered size.\n"+
+                "Clicking the 'Show Heatmap' button will show a heatmap of your keys (more you press, the redder and vice versa). While the heatmap is active, you can also hover over the keys to show their individual key counts.\n"+
+                "Finally, to see your 'Wrapped', click the '2026 Wrapped' button."
+
+            );
+        });
+        topPanel.add(help);
+
+        JScrollPane topScroll = new JScrollPane(topPanel);
+        northContainer.add(topScroll);
 
         add(northContainer, BorderLayout.NORTH);
         add(kbScroll, BorderLayout.CENTER);
@@ -291,36 +324,8 @@ public class RemapperGUI extends JFrame implements ActionListener {
                 if (sourceKeyBtn != null) sourceKeyBtn.resetColor();
                 sourceKeyBtn = clickedBtn;
                 
-                if (VirtualKeyboard.isShifted && VirtualKeyboard.isKeyShifted(keyCode)) {
-                    String baseName = VirtualKeyboard.getName(keyCode);
-                    String customName = "Shift+" + baseName;
-                    
-                    List<Integer> combo = new ArrayList<>();
-                    combo.add(16);
-                    combo.add(keyCode);
-
-                    CustomKey existing = null;
-                    for (CustomKey ck : CustomKeyManager.customKeys) {
-                        if (ck.matches(new HashSet<>(combo))) {
-                            existing = ck;
-                            break;                                                                                                                         
-                        }                                  
-                    }
-
-                    if (existing == null) {                                                                                                                                                                                                                                                        
-                        CustomKeyManager.add(customName, combo);
-                        existing = CustomKeyManager.getByPseudoCode(
-                            CustomKeyManager.customKeys.get(CustomKeyManager.customKeys.size()-1).getPseudoCode()
-                        );
-                        
-                        existing.setHidden(true);
-                        virtualKeyboard.rebuildCustomKeys();
-                    }                                                          
-                                                                                        
-                    sourceKeyBtn.putClientProperty("isShiftedCombo", true);
-                    sourceKeyBtn.putClientProperty("shiftedPseudoCode", existing.getPseudoCode());
-                }
-
+                handleShiftedClick(sourceKeyBtn); // <--- Use the new helper!
+                
                 sourceKeyBtn.setSelectedSource();
                 visualStep = 2; 
             } 
@@ -331,6 +336,9 @@ public class RemapperGUI extends JFrame implements ActionListener {
                 }
                 if (destKeyBtn != null) destKeyBtn.resetColor();
                 destKeyBtn = clickedBtn;
+                
+                handleShiftedClick(destKeyBtn); // <--- Apply the exact same logic to the destination key!
+                
                 destKeyBtn.setSelectedDest();
                 confirmVisualBtn.setEnabled(true);
             }
@@ -383,5 +391,38 @@ public class RemapperGUI extends JFrame implements ActionListener {
         );
         
         ConfigManager.save();
+    }
+    private void handleShiftedClick(KeyButton btn) {
+        int keyCode = btn.getKeyCode();
+        if (VirtualKeyboard.isShifted && VirtualKeyboard.isKeyShifted(keyCode)) {
+            String symbol = Main.getShiftedSymbol(keyCode);
+            String customName = (symbol != null) ? symbol : "Shift+" + VirtualKeyboard.getName(keyCode);
+            
+            List<Integer> combo = new ArrayList<>();
+            combo.add(16);
+            combo.add(keyCode);
+
+            CustomKey existing = null;
+            for (CustomKey ck : CustomKeyManager.customKeys) {
+                if (ck.matches(new HashSet<>(combo))) {
+                    existing = ck;
+                    break;
+                }
+            }
+
+            if (existing == null) {
+                CustomKeyManager.add(customName, combo);
+                existing = CustomKeyManager.getByPseudoCode(
+                    CustomKeyManager.customKeys.get(CustomKeyManager.customKeys.size()-1).getPseudoCode()
+                );
+                existing.setHidden(true);
+                virtualKeyboard.rebuildCustomKeys();
+            }
+            
+            btn.putClientProperty("isShiftedCombo", true);
+            btn.putClientProperty("shiftedPseudoCode", existing.getPseudoCode());
+        } else {
+            btn.putClientProperty("isShiftedCombo", false);
+        }
     }
 }

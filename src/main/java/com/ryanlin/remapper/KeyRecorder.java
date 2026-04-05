@@ -16,12 +16,12 @@ public class KeyRecorder extends JDialog {
 
     public KeyRecorder(JFrame parent) {
         super(parent, "Record Key Combo/Custom Key", true);
-        setSize(400, 200);
+        setSize(600, 300);
         setLayout(new BorderLayout());
         setLocationRelativeTo(parent);
 
         statusLabel = new JLabel("Press keys...", SwingConstants.CENTER);
-        statusLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        statusLabel.setFont(new Font("SansSerif", Font.BOLD, 38));
         add(statusLabel, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel();
@@ -121,7 +121,25 @@ public class KeyRecorder extends JDialog {
 
     private String getKeyNames(List<Integer> codes) {
         if (codes.isEmpty()) return "";
-        return codes.stream().map(c -> (c == 134) ? "Copilot" : KeyEvent.getKeyText(c == 13 ? 10 : c))
-                             .collect(Collectors.joining(" + "));
+        return codes.stream().map(c -> {
+            if (c == 134) return "Copilot";
+            int javaCode = translateToJavaKeyCode(c);
+            return KeyEvent.getKeyText(javaCode);
+        }).collect(Collectors.joining(" + "));
+    }
+    private int translateToJavaKeyCode(int rawCode) {
+        switch (rawCode) {
+            case 189: return KeyEvent.VK_MINUS;         // -
+            case 187: return KeyEvent.VK_EQUALS;        // =
+            case 219: return KeyEvent.VK_OPEN_BRACKET;  // [
+            case 221: return KeyEvent.VK_CLOSE_BRACKET; // ]
+            case 220: return KeyEvent.VK_BACK_SLASH;    // \
+            case 186: return KeyEvent.VK_SEMICOLON;     // ;
+            case 188: return KeyEvent.VK_COMMA;         // ,
+            case 190: return KeyEvent.VK_PERIOD;        // .
+            case 191: return KeyEvent.VK_SLASH;         // /
+            case 13:  return 10;                        // Enter
+            default:  return rawCode; 
+        }
     }
 }

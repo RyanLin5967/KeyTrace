@@ -65,6 +65,21 @@ public class Main {
         void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
         short GetAsyncKeyState(int vKey);
     }
+    private static int translateToJavaKeyCode(int rawCode) {
+        switch (rawCode) {
+            case 189: return KeyEvent.VK_MINUS;         // -
+            case 187: return KeyEvent.VK_EQUALS;        // =
+            case 219: return KeyEvent.VK_OPEN_BRACKET;  // [
+            case 221: return KeyEvent.VK_CLOSE_BRACKET; // ]
+            case 220: return KeyEvent.VK_BACK_SLASH;    // \
+            case 186: return KeyEvent.VK_SEMICOLON;     // ;
+            case 188: return KeyEvent.VK_COMMA;         // ,
+            case 190: return KeyEvent.VK_PERIOD;        // .
+            case 191: return KeyEvent.VK_SLASH;         // /
+            case 222: return KeyEvent.VK_QUOTE;         // '
+            default: return rawCode; 
+        }
+    }
 
     public static void main(String[] args) {
         try {
@@ -321,9 +336,10 @@ public class Main {
             }
             return;
         }
+        int javaCode = translateToJavaKeyCode(code);
         if (robot != null) {
-            if (pressed) robot.keyPress(code);
-            else robot.keyRelease(code);
+            if (pressed) robot.keyPress(javaCode);
+            else robot.keyRelease(javaCode);
         }
     }
     
@@ -361,6 +377,18 @@ public class Main {
             code == 524 || code == 91 || code == 92;    // Windows
     }
 
+    public static String getShiftedSymbol(int code) {
+        switch (code) {
+            case 49: return "!"; case 50: return "@"; case 51: return "#"; case 52: return "$";
+            case 53: return "%"; case 54: return "^"; case 55: return "&"; case 56: return "*";
+            case 57: return "("; case 48: return ")"; case 189: return "_"; case 187: return "+";
+            case 219: return "{"; case 221: return "}"; case 220: return "|"; case 186: return ":";
+            case 222: return "\""; case 188: return "<"; case 190: return ">"; case 191: return "?";
+            case 192: return "~";
+            default: return null; 
+        }
+    }
+
     public static boolean isPureModifierCustom(List<Integer> codes) {
         for (int code : codes) {
             if (!isModifier(code)) return false; 
@@ -369,23 +397,37 @@ public class Main {
     }
     public static String buildStandardCombo(Collection<Integer> keys, int triggerKey) {
         List<Integer> sortedMods = new ArrayList<>();
+        boolean hasShift = false;
+        
         for (int k : keys) {
-            if (k != triggerKey && (k == 16 || k == 17 || k == 18 || k == 524)) {
+            if (k != triggerKey && (k == 16 || k == 17 || k == 18 || k == 524 || k == 160 || k == 161)) {
+                if (k == 16 || k == 160 || k == 161) hasShift = true;
                 sortedMods.add(k);
             }
         }
         Collections.sort(sortedMods);
 
+        String baseName = VirtualKeyboard.getName(triggerKey);
+        String symbol = getShiftedSymbol(triggerKey);
+        boolean useSymbol = hasShift && (symbol != null);
+
+        if (useSymbol) {
+            baseName = symbol; // Use '!' instead of '1'
+        }
+
         StringBuilder sb = new StringBuilder();
         for (int mod : sortedMods) {
-            if (mod == 16) sb.append("Shift+");
+            if ((mod == 16 || mod == 160 || mod == 161) && useSymbol) continue; // Skip the word "Shift+" if we are printing a symbol
+            
+            if (mod == 16 || mod == 160 || mod == 161) {
+                if (sb.indexOf("Shift+") == -1) sb.append("Shift+"); 
+            }
             else if (mod == 17) sb.append("Ctrl+");
             else if (mod == 18) sb.append("Alt+");
             else if (mod == 524) sb.append("Win+");
         }
 
-        sb.append(VirtualKeyboard.getName(triggerKey));
-        
+        sb.append(baseName);
         return sb.toString();
     }
 }

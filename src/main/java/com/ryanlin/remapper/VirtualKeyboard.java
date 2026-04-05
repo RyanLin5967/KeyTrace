@@ -7,14 +7,15 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.FontMetrics;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
+import javax.swing.border.TitledBorder;
 
 public class VirtualKeyboard extends JPanel {
     private ActionListener keyListener;
@@ -37,8 +39,7 @@ public class VirtualKeyboard extends JPanel {
     private Timer refreshTimer;
     private final int UNIT_WIDTH = 45;
     private final int UNIT_HEIGHT = 45;
-    private final int FUNCTION_GAP_SIZE = 29;
-
+    private final int FUNCTION_GAP_SIZE = 4;
     private JPanel customKeysPanel;
     private RemapperGUI parentGUI;
 
@@ -75,7 +76,6 @@ public class VirtualKeyboard extends JPanel {
     public VirtualKeyboard(RemapperGUI gui) {
         this.keyListener = gui;
         this.parentGUI = gui;
-        
         // Timer updates heatmap every second
         refreshTimer = new Timer(1000, e -> {
             if (isHeatmapOn) {
@@ -362,7 +362,9 @@ public class VirtualKeyboard extends JPanel {
     }
 
     private void addFixedGap(JPanel p, GridBagConstraints gbc) {
-        gbc.weightx = 0; JPanel gap = new JPanel(); gap.setOpaque(false);
+        gbc.weightx = 0; 
+        JPanel gap = new JPanel(); 
+        gap.setOpaque(false);
         gap.setPreferredSize(new Dimension(FUNCTION_GAP_SIZE, UNIT_HEIGHT)); p.add(gap, gbc);
     }
 
@@ -386,7 +388,8 @@ public class VirtualKeyboard extends JPanel {
         block.add(createRow(new String[]{"Shift","Z","X","C","V","B","N","M",",",".","/","Shift","▲"}, new int[]{16,90,88,67,86,66,78,77,188,190,191,16,38}, new int[]{115,50,50,50,50,50,50,50,50,50,50,85,50}));
         JPanel bottomRow = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH; 
+        gbc.weighty = 1.0;
         gbc.insets = new Insets(1, 1, 1, 1);
         String[] leftLabels = {"Ctrl","Win","Alt","Space","Alt","Fn"};
         int[] leftCodes = {17,524,18,32,18,0};

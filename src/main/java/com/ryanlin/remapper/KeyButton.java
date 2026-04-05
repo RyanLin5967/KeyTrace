@@ -28,15 +28,21 @@ public class KeyButton extends JButton {
    @Override
     public String getToolTipText(MouseEvent event) {
         if (!VirtualKeyboard.isHeatmapOn) return null;
-
         long count;
         String label;
 
         if (VirtualKeyboard.isShifted && VirtualKeyboard.isKeyShifted(this.keyCode)) {
-            String baseName = VirtualKeyboard.getName(this.keyCode);
-            String comboKey = "Shift+" + baseName;
-            count = HeatmapManager.comboCounts.getOrDefault(comboKey, 0L);
-            label = comboKey;
+            String symbol = Main.getShiftedSymbol(this.keyCode);
+            
+            if (symbol != null) {
+                count = HeatmapManager.comboCounts.getOrDefault(symbol, 0L);
+                label = "Key " + symbol;
+            } else {
+                String baseName = VirtualKeyboard.getName(this.keyCode);
+                String comboKey = "Shift+" + baseName;
+                count = HeatmapManager.comboCounts.getOrDefault(comboKey, 0L);
+                label = comboKey;
+            }
         } else {
             count = HeatmapManager.getCount(this.keyCode);
             label = "Key " + VirtualKeyboard.getName(this.keyCode);
