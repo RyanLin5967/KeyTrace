@@ -59,7 +59,7 @@ Or on Windows, just run:
 ```
 .\r.bat
 ```
-
+- **You can also just download and run the .jar file in releases**
 ---
 
 ## How It Works
